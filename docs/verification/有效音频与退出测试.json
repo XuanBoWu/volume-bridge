@@ -1,0 +1,156 @@
+[
+  {
+    "stage": "tone before rebuild",
+    "status": {
+      "callbacks": 6763,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 1,
+      "inputRMS": 0.0826688425535067,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0.020667210638376676,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "tone after guarded rebuild",
+    "status": {
+      "callbacks": 7177,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 2,
+      "inputRMS": 0.03777037577333605,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0.009442593943334012,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "tone after live sample rate change",
+    "status": {
+      "callbacks": 7268,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 3,
+      "inputRMS": 0.06940604507198059,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0.017351511267995147,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 44100,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "tone after original sample rate restored",
+    "status": {
+      "callbacks": 7367,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 4,
+      "inputRMS": 0.09194298343734371,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0.022985745859335927,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "mute while source keeps playing",
+    "status": {
+      "callbacks": 7779,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 4,
+      "inputRMS": 0.06681988527707453,
+      "mismatches": 0,
+      "muted": true,
+      "name": "Mi Monitor",
+      "outputRMS": 0,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "unmute restores gain",
+    "status": {
+      "callbacks": 7966,
+      "detail": "软件音量正在处理当前显示器输出",
+      "deviceID": 131,
+      "generation": 4,
+      "inputRMS": 0.030316925421441425,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0.007532687906233993,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "active",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  },
+  {
+    "stage": "graceful signal shutdown and process exit",
+    "status": {
+      "callbacks": 8016,
+      "detail": "音频链路已释放",
+      "deviceID": 131,
+      "generation": 4,
+      "inputRMS": 0,
+      "mismatches": 0,
+      "muted": false,
+      "name": "Mi Monitor",
+      "outputRMS": 0,
+      "overloads": 0,
+      "paused": false,
+      "protectedSilence": false,
+      "rate": 48000,
+      "retryAttempt": 0,
+      "state": "stopped",
+      "uid": "example-device-uid-01",
+      "volume": 50
+    }
+  }
+]

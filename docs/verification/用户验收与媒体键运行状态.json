@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-08",
+  "version": "0.2.0",
+  "userVerified": {
+    "displayReconnect": "passed; user reported no issue",
+    "sliderRegression": "passed; user reported normal",
+    "physicalVolumeKeysMuteHoldAndHUD": "passed; user reported all normal"
+  },
+  "deferred": {
+    "realSleepWake": "user deferred"
+  },
+  "liveSnapshot": {
+    "callbacks": 28938,
+    "detail": "软件音量正在处理当前显示器输出",
+    "deviceID": 131,
+    "generation": 3,
+    "hudPresentations": 227,
+    "hudVisible": false,
+    "inputRMS": 0.09805905074076078,
+    "mediaKeyPresses": 146,
+    "mediaKeysState": "ready",
+    "mismatches": 0,
+    "muted": false,
+    "name": "Mi Monitor",
+    "outputRMS": 0.09805905074076078,
+    "overloads": 0,
+    "paused": false,
+    "protectedSilence": false,
+    "rate": 48000,
+    "retryAttempt": 0,
+    "state": "active",
+    "uid": "example-device-uid-01",
+    "volume": 100
+  }
+}

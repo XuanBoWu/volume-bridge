@@ -1,0 +1,3 @@
+STATE starting generation=0 device=131 rate=48000 正在建立音频链路
+STATE active generation=1 device=131 rate=48000 软件音量正在处理当前显示器输出
+STATE stopped generation=1 device=131 rate=48000 音频链路已释放

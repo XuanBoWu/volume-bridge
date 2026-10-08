@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-08",
+  "version": "0.2.1",
+  "project": "音桥 / VolumeBridge",
+  "checks": {
+    "arm64AppBuild": "passed",
+    "adHocSignatureVerification": "passed",
+    "minimumDeploymentVersion": "14.2",
+    "devicePolicyAndGainConvergence": "passed",
+    "sliderSynchronization": "passed",
+    "mediaKeyRouting": "passed",
+    "mediaVolumePolicy": "passed",
+    "pythonSyntax": "passed",
+    "audioctlBuildAndReadOnlyDeviceInventory": "passed",
+    "standaloneLowAmplitudeStereoFixture": "passed",
+    "gitIgnoreBuildAndWorkArtifacts": "passed"
+  },
+  "runtimeScope": "Migration build and offline checks only. Renamed application not launched; previous validated DisplayVolume remains running.",
+  "inheritedAcceptance": "Prior actual PCM and user hardware acceptance records are retained separately; real sleep/wake remains deferred."
+}

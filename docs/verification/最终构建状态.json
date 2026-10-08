@@ -1,0 +1,19 @@
+{
+  "callbacks" : 3107,
+  "detail" : "音频链路已释放",
+  "deviceID" : 131,
+  "generation" : 1,
+  "inputRMS" : 0,
+  "mismatches" : 0,
+  "muted" : false,
+  "name" : "Mi Monitor",
+  "outputRMS" : 0,
+  "overloads" : 0,
+  "paused" : false,
+  "protectedSilence" : false,
+  "rate" : 48000,
+  "retryAttempt" : 0,
+  "state" : "stopped",
+  "uid" : "example-device-uid-01",
+  "volume" : 50
+}
