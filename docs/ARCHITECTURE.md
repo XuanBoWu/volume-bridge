@@ -19,6 +19,7 @@ Tap 使用 mutedWhenTapped，避免处理期间原始音频与处理后音频重
 - `Sources/VolumeSliderState.swift`：保留最新鼠标输入，防止旧快照重置正在拖动的滑块；后到达的键盘输入可接替待确认鼠标输入。
 - `Sources/MediaKeys.swift` / `MediaKeyPolicy.swift`：仅订阅系统媒体事件，过滤音量三键；普通按键不进入处理。匹配按下和释放，去除静音重复切换。
 - `Sources/VolumeHUD.swift`：不激活、不拦截鼠标的浮层，显示设备与音量，按键停止约 1.4 秒后隐藏。
+- `Sources/Localization.swift` / `Resources/`：原生 Bundle 翻译与区域百分比；后端说明在生命周期队列查找文案，实时回调不读取资源。机器状态和诊断字段保持不变。
 
 快照通过短时同步访问提供给 UI。媒体键先检查 active 和当前默认输出，再在串行队列内核对状态与 UID，避免切换设备后的旧事件改变新设备。
 
@@ -32,4 +33,4 @@ Tap 使用 mutedWhenTapped，避免处理期间原始音频与处理后音频重
 
 ## 验证边界
 
-短时测试覆盖真实 PCM、设备切换和格式重建，用户覆盖实际拔插和真实媒体键。模拟睡眠入口与真实睡眠验收不同；缓冲时长不等于完整播放延迟，过载计数为零也不能证明长时间完全无断续。详细记录见 `verification/` 和 ROADMAP.md。
+短时测试覆盖真实 PCM、设备切换和格式重建，用户覆盖实际拔插和真实媒体键。模拟睡眠入口与真实睡眠验收不同；缓冲时长不等于完整播放延迟，过载计数为零也不能证明长时间完全无断续。详细记录见 `verification/` 和 STATUS.md，测试方法见 TESTING.md，历史修复原因见 DECISIONS.md。

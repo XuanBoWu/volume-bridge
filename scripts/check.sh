@@ -3,6 +3,7 @@ set -eu
 project_dir="${0:A:h:h}"
 cd "$project_dir"
 zsh "$project_dir/build.sh"
+zsh "$project_dir/scripts/test-localizations.sh"
 python3 - <<'PY'
 from pathlib import Path
 import ast

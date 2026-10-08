@@ -2,11 +2,13 @@
 
 原生 macOS 菜单栏工具。针对不提供原生音量控制的 HDMI／DisplayPort 显示器，在本机调整播放增益。Swift / AppKit 界面，Objective-C++ / Core Audio 音频引擎，不安装驱动。
 
-当前版本：0.2.1，已迁移为独立的长期维护项目。英文项目名 VolumeBridge，目录 `volume-bridge`。
+当前源码版本：0.2.2，已迁移为独立的长期维护项目。英文项目名 VolumeBridge，目录 `volume-bridge`。跨会话背景与当前验收进度见 [AGENTS.md](AGENTS.md) 和 [docs/STATUS.md](docs/STATUS.md)。原型 0.2.0 已有实机与用户验收，迁移/本地化后的新路径应用仍待首次运行验收。
 
 ## 使用
 
-打开 `VolumeBridge.app`，首次启动允许系统音频捕获权限。菜单栏会出现扬声器图标，鼠标悬停可看到 音桥 和当前设备状态。
+打开 `VolumeBridge.app`，首次启动允许系统音频捕获权限。菜单栏会出现扬声器图标，鼠标悬停可看到应用名称和当前设备状态。
+
+界面跟随 macOS 的系统或应用首选语言：简体中文显示「音桥」，英文显示「VolumeBridge」，无匹配翻译时回退到英文。百分比采用当前区域格式；应用语言更改后需重新启动。菜单、HUD、状态、无障碍描述与音频授权说明均已本地化，详见 [本地化指南](docs/LOCALIZATION.md)。
 
 菜单提供音量滑块、静音、暂停、手动重建链路和退出。显示器默认软件音量为 50%，按设备 UID 保存；50% 对应 0.25 的样本增益，采用平方听感曲线，100% 不衰减，0% 静音。切到原生支持音量的设备后旁路，由 macOS 控制音量。
 
@@ -24,8 +26,13 @@
 
 - `Sources/`：Swift 界面、媒体键与 HUD，Objective-C++ 音频引擎和纯策略。
 - `Tests/`：自动策略测试及需显式运行的硬件验收工具。
+- `Resources/`：英文与简体中文 UI 和 Bundle 元数据翻译。
+- `AGENTS.md`：新会话必读的背景、稳定约束、定位顺序和交接维护规则。
+- `docs/STATUS.md`：当前实现、检查、实机验收和待完成事项。
 - `docs/verification/`：原型阶段和后续验收记录；历史记录保留当时的 DisplayVolume 名称。
 - `docs/ARCHITECTURE.md`：音频路径、线程和状态约束。
+- `docs/DECISIONS.md`：关键技术取舍、历史缺陷原因与修复约束。
+- `docs/LOCALIZATION.md`、`docs/TESTING.md`：文案维护、检查命令和实机测试副作用。
 - `docs/ROADMAP.md`：已验收项目、待验收项目与开发计划。
 - `CHANGELOG.md`：版本变更。
 - `scripts/`：检查与诊断工具构建。
@@ -109,7 +116,7 @@ python3 Tests/media_integration.py build/audioctl work/status.json \
 
 默认构建 arm64，实际 Mach-O 部署目标为 macOS 14.2。可以通过 `VB_BUILD_DIR` 改变构建输出路径；Intel 尚未实测。
 
-构建会自动运行状态策略、增益收敛、滑块同步、媒体事件路由和媒体键音量策略测试。
+构建会自动运行状态策略、增益收敛、滑块同步、媒体事件路由和媒体键音量策略测试。统一 `scripts/check.sh` 额外检查资源键、占位符、打包一致性，运行中英文与语言回退测试，并检查 Python 语法；这些检查不启动音频。实机工具的完整用法、恢复范围与限制见 [测试指南](docs/TESTING.md)。
 
 `Tests/audioctl.mm`、`Tests/integration.py` 和 `Tests/live_tone.py` 是显式运行的实机测试工具，不会随普通构建自动修改音频设置。integration.py 临时切换设备和采样率，结束时恢复原设置。
 
@@ -121,6 +128,6 @@ python3 Tests/media_integration.py build/audioctl work/status.json \
 
 ## 下一步
 
-继续完成真实睡眠唤醒和长时间运行验收，再接入登录启动。发布前完善失败恢复、权限引导、代码签名与公证，并测量实际额外延迟。
+先在用户方便时验收新路径应用的中英文界面、授权与旧设备音量设置承接。真实睡眠唤醒由用户留待后续，之后完成长时间运行验收，再接入登录启动。发布前完善失败恢复、权限引导、代码签名与公证，并测量实际额外延迟。
 
 媒体键授权实现参考 Apple 的 [AXIsProcessTrustedWithOptions 文档](https://developer.apple.com/documentation/applicationservices/1459186-axisprocesstrustedwithoptions)；事件监听使用 [CGEvent.tapCreate](https://developer.apple.com/documentation/coregraphics/cgevent/tapcreate(tap:place:options:eventsofinterest:callback:userinfo:))，媒体事件字段参照本机 Apple SDK 的 IOKit `ev_keymap.h` 与 `IOLLEvent.h`。

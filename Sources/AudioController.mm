@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 namespace {
+NSString *l10n(NSString *key) { return [NSBundle.mainBundle localizedStringForKey:key value:nil table:nil]; }
 auto address(AudioObjectPropertySelector s,AudioObjectPropertyScope scope=kAudioObjectPropertyScopeGlobal,UInt32 e=0) {
     return AudioObjectPropertyAddress{s,scope,e};
 }
@@ -98,7 +99,7 @@ struct Engine {
         if(!own) throw OSStatus(-70001);
         NSString *uid=[NSString stringWithUTF8String:d.uid.c_str()];
         description=[[CATapDescription alloc] initExcludingProcesses:@[@(own)] andDeviceUID:uid withStream:0];
-        description.name=@"音桥"; [description setPrivate:YES]; description.muteBehavior=CATapMutedWhenTapped;
+        description.name=l10n(@"app.name"); [description setPrivate:YES]; description.muteBehavior=CATapMutedWhenTapped;
         require(AudioHardwareCreateProcessTap(description,&tap),"create-tap");
         AudioStreamBasicDescription format{}; require(get(tap,kAudioTapPropertyFormat,format),"tap-format");
         if(format.mFormatID!=kAudioFormatLinearPCM || !(format.mFormatFlags&kAudioFormatFlagIsFloat)
@@ -168,7 +169,7 @@ struct Listener {
     if((self=[super init])) {
         _queue=dispatch_queue_create("local.displayvolume.lifecycle",DISPATCH_QUEUE_SERIAL);
         _saved=[[[NSUserDefaults standardUserDefaults] dictionaryForKey:@"deviceVolumes"] mutableCopy] ?: [NSMutableDictionary dictionary];
-        _phase=@"stopped"; _detail=@"尚未启动"; _percent=50; _snapshot=@{}; [self publish];
+        _phase=@"stopped"; _detail=l10n(@"detail.notStarted"); _percent=50; _snapshot=@{}; [self publish];
     }
     return self;
 }
@@ -245,11 +246,11 @@ struct Listener {
     if(plan!=dv::Plan::keep && plan!=dv::Plan::start && plan!=dv::Plan::rebuild) {
         [self discardEngine]; _attempts=0; _retryAt=0; _force=NO;
         switch(plan) {
-            case dv::Plan::suspended: [self phase:@"sleeping" detail:@"睡眠期间已释放音频链路"]; break;
-            case dv::Plan::paused: [self phase:@"paused" detail:@"已暂停，使用原始输出音量"]; break;
-            case dv::Plan::native: [self phase:@"bypass" detail:@"此设备由 macOS 控制音量"]; break;
-            case dv::Plan::noDevice: [self phase:@"waiting" detail:@"等待可用的音频输出"]; break;
-            default: [self phase:@"unsupported" detail:@"此输出暂不支持软件音量，保留原始播放"]; break;
+            case dv::Plan::suspended: [self phase:@"sleeping" detail:l10n(@"detail.sleeping")]; break;
+            case dv::Plan::paused: [self phase:@"paused" detail:l10n(@"detail.paused")]; break;
+            case dv::Plan::native: [self phase:@"bypass" detail:l10n(@"detail.bypass")]; break;
+            case dv::Plan::noDevice: [self phase:@"waiting" detail:l10n(@"detail.waiting")]; break;
+            default: [self phase:@"unsupported" detail:l10n(@"detail.unsupported")]; break;
         }
         return;
     }
@@ -257,7 +258,7 @@ struct Listener {
     double now=NSProcessInfo.processInfo.systemUptime;
     if(now<_retryAt) { [self publish]; return; }
     if(_guard && _guard->configuration.uid!=next.uid) _guard.reset();
-    [self phase:_generation ? @"recovering" : @"starting" detail:@"正在建立音频链路"]; _force=NO;
+    [self phase:_generation ? @"recovering" : @"starting" detail:l10n(@"detail.starting")]; _force=NO;
     try {
         if(_engine) {
             if(_engine->configuration.uid==next.uid && next.alive) {
@@ -267,11 +268,11 @@ struct Listener {
         }
         auto created=std::make_unique<Engine>(); created->start(next,dv::gain(_percent,_muted));
         _engine=std::move(created); _guard.reset(); _generation++; _attempts=0; _retryAt=0;
-        [self phase:@"active" detail:@"软件音量正在处理当前显示器输出"];
+        [self phase:@"active" detail:l10n(@"detail.active")];
     } catch(OSStatus error) {
         if(_engine) [self discardEngine];
         _attempts++; _retryAt=NSProcessInfo.processInfo.systemUptime+std::min(30.0,std::pow(2.0,std::min(_attempts-1,5u)));
-        NSString *detail=[NSString stringWithFormat:@"音频错误 %d，稍后自动重试%@",int(error),_guard ? @"；恢复期间保持静音" : @""];
+        NSString *detail=[NSString stringWithFormat:l10n(_guard ? @"detail.errorProtected" : @"detail.error"),int(error)];
         [self phase:@"error" detail:detail];
     }
 }
@@ -292,7 +293,7 @@ struct Listener {
         self->_running=NO; self->_token++;
         if(self->_timer) { dispatch_source_cancel(self->_timer); self->_timer=nil; }
         [self clearListeners:self->_systemListeners]; [self clearListeners:self->_deviceListeners]; [self discardEngine];
-        [self phase:@"stopped" detail:@"音频链路已释放"];
+        [self phase:@"stopped" detail:l10n(@"detail.stopped")];
         // AppKit may wait for terminateLater in a nested modal run loop.
         // A completion on the serial main dispatch queue cannot re-enter a
         // terminate call that originated on that same queue.

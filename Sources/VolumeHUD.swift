@@ -22,7 +22,7 @@ final class VolumeHUD {
     private let panel = HUDPanel(contentRect: NSRect(x: 0, y: 0, width: 260, height: 116),
         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
     private let icon = NSImageView(frame: NSRect(x: 22, y: 57, width: 32, height: 32))
-    private let label = NSTextField(labelWithString: "50%")
+    private let label = NSTextField(labelWithString: L10n.percent(50))
     private let device = NSTextField(labelWithString: "")
     private let bar = VolumeBar(frame: NSRect(x: 22, y: 22, width: 216, height: 6))
     private var hideTimer: Timer?
@@ -30,7 +30,7 @@ final class VolumeHUD {
     var isVisible: Bool { panel.isVisible }
 
     init() {
-        panel.title = "音桥 HUD"
+        panel.title = L10n.text("hud.title")
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         panel.hidesOnDeactivate = false
@@ -64,11 +64,11 @@ final class VolumeHUD {
         presentations += 1
         let silent = muted || percent <= 0
         let symbol = silent ? "speaker.slash.fill" : percent < 35 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"
-        icon.image = NSImage(systemSymbolName: symbol, accessibilityDescription: silent ? "静音" : "音量")
-        label.stringValue = muted ? "静音" : "\(Int(percent.rounded()))%"
+        icon.image = NSImage(systemSymbolName: symbol, accessibilityDescription: L10n.text(silent ? "accessibility.muted" : "accessibility.volume"))
+        label.stringValue = muted ? L10n.text("hud.muted") : L10n.percent(percent)
         device.stringValue = deviceName
         bar.percent = silent ? 0 : percent
-        panel.setAccessibilityLabel("音桥 · \(deviceName) · \(label.stringValue)")
+        panel.setAccessibilityLabel(L10n.format("hud.accessibility", L10n.text("app.name"), deviceName, label.stringValue))
         let screen = NSScreen.screens.first { $0.localizedName.caseInsensitiveCompare(deviceName) == .orderedSame }
             ?? NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         if let screen = screen {

@@ -14,18 +14,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let audio = DVAudioController()
     var item: NSStatusItem!
     let menu = NSMenu()
-    let deviceItem = NSMenuItem(title: "读取输出设备…", action: nil, keyEquivalent: "")
-    let stateItem = NSMenuItem(title: "准备启动", action: nil, keyEquivalent: "")
+    let deviceItem = NSMenuItem(title: L10n.text("menu.readingDevice"), action: nil, keyEquivalent: "")
+    let stateItem = NSMenuItem(title: L10n.text("menu.preparing"), action: nil, keyEquivalent: "")
     let detailLabel = NSTextField(wrappingLabelWithString: "")
-    let volumeLabel = NSTextField(labelWithString: "音量 50%")
+    let volumeLabel = NSTextField(labelWithString: L10n.format("volume.label", L10n.percent(50)))
     let slider = TrackingSlider(value: 50, minValue: 0, maxValue: 100, target: nil, action: nil)
     var sliderState = VolumeSliderState()
     var volumeChangeSequence: UInt64 = 0
     let mediaKeys = MediaKeys()
     let hud = VolumeHUD()
-    let keysItem = NSMenuItem(title: "启用键盘音量键…", action: #selector(enableMediaKeys), keyEquivalent: "")
-    let muteItem = NSMenuItem(title: "静音", action: #selector(toggleMute), keyEquivalent: "")
-    let pauseItem = NSMenuItem(title: "暂停软件音量", action: #selector(togglePause), keyEquivalent: "")
+    let keysItem = NSMenuItem(title: L10n.text("menu.enableKeys"), action: #selector(enableMediaKeys), keyEquivalent: "")
+    let muteItem = NSMenuItem(title: L10n.text("menu.mute"), action: #selector(toggleMute), keyEquivalent: "")
+    let pauseItem = NSMenuItem(title: L10n.text("menu.pause"), action: #selector(togglePause), keyEquivalent: "")
     var timer: Timer?
     var signalSources: [DispatchSourceSignal] = []
     var observers: [NSObjectProtocol] = []
@@ -43,11 +43,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             setbuf(stderr, nil)
         }
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: "音桥")
+        item.button?.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: L10n.text("app.name"))
         item.menu = menu
         menu.delegate = self
         menu.autoenablesItems = false
-        menu.addItem(NSMenuItem(title: "音桥 · 键盘控制版", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L10n.text("app.menuTitle"), action: nil, keyEquivalent: ""))
         menu.addItem(deviceItem)
         menu.addItem(stateItem)
         let detail = NSMenuItem()
@@ -66,6 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         slider.target = self
         slider.action = #selector(volumeChanged)
         slider.isContinuous = true
+        slider.setAccessibilityLabel(L10n.text("accessibility.volumeSlider"))
         slider.trackingChanged = { [weak self] tracking in
             guard let self = self else { return }
             if tracking {
@@ -85,12 +86,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(pauseItem)
         keysItem.target = self
         menu.addItem(keysItem)
-        let retry = NSMenuItem(title: "重建音频链路", action: #selector(retry), keyEquivalent: "")
+        let retry = NSMenuItem(title: L10n.text("menu.rebuild"), action: #selector(retry), keyEquivalent: "")
         retry.target = self
         menu.addItem(retry)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "暂停或退出后恢复显示器原始音量", action: nil, keyEquivalent: ""))
-        let quit = NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q")
+        let originalVolume = NSMenuItem()
+        let originalView = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 46))
+        let originalLabel = NSTextField(wrappingLabelWithString: L10n.text("menu.originalVolume"))
+        originalLabel.frame = NSRect(x: 12, y: 6, width: 256, height: 34)
+        originalLabel.font = .systemFont(ofSize: 11)
+        originalLabel.textColor = .secondaryLabelColor
+        originalView.addSubview(originalLabel)
+        originalVolume.view = originalView
+        menu.addItem(originalVolume)
+        let quit = NSMenuItem(title: L10n.text("menu.quit"), action: #selector(quitApp), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         let center = NSWorkspace.shared.notificationCenter
@@ -127,9 +136,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let s = status()
         let state = s["state"] as? String ?? "stopped"
         let name = s["name"] as? String ?? ""
-        let labels = ["active": "软件音量已启用", "bypass": "macOS 原生音量", "starting": "正在启动", "recovering": "正在恢复", "sleeping": "已释放 · 等待唤醒", "paused": "已暂停", "waiting": "等待输出设备", "error": "恢复失败 · 自动重试", "unsupported": "此输出暂不支持", "stopped": "已停止"]
-        deviceItem.title = name.isEmpty ? "无音频输出" : name
-        stateItem.title = labels[state] ?? state
+        let stateLabel = L10n.stateLabel(state)
+        deviceItem.title = name.isEmpty ? L10n.text("menu.noOutput") : name
+        stateItem.title = stateLabel
         detailLabel.stringValue = s["detail"] as? String ?? ""
         let percent = (s["volume"] as? NSNumber)?.doubleValue ?? 50
         let muted = (s["muted"] as? NSNumber)?.boolValue ?? false
@@ -143,11 +152,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         muteItem.isEnabled = state == "active"
         muteItem.state = muted ? .on : .off
         pauseItem.state = (s["paused"] as? NSNumber)?.boolValue == true ? .on : .off
-        keysItem.title = mediaKeys.state == "ready" ? "键盘音量键已启用" : mediaKeys.state == "permission" ? "启用键盘音量键 · 需要系统授权…" : "键盘音量键不可用 · 重试…"
+        keysItem.title = L10n.text(mediaKeys.state == "ready" ? "keys.ready" : mediaKeys.state == "permission" ? "keys.permission" : "keys.unavailable")
         keysItem.isEnabled = mediaKeys.state != "ready"
         if state != "active" { hud.hide() }
-        item.button?.image = NSImage(systemSymbolName: muted && state == "active" ? "speaker.slash" : "speaker.wave.2", accessibilityDescription: "音桥")
-        item.button?.toolTip = "音桥 · \(labels[state] ?? state) · \(name)"
+        item.button?.image = NSImage(systemSymbolName: muted && state == "active" ? "speaker.slash" : "speaker.wave.2", accessibilityDescription: L10n.text("app.name"))
+        item.button?.toolTip = L10n.format("app.tooltip", L10n.text("app.name"), stateLabel, name)
         writeStatus(s)
     }
     func writeStatus(_ s: [String: Any]) {
@@ -184,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     func menuWillOpen(_ menu: NSMenu) { refresh() }
     func updateVolumeLabel(muted: Bool) {
-        volumeLabel.stringValue = "音量 \(Int(sliderState.value.rounded()))%" + (muted ? " · 已静音" : "")
+        volumeLabel.stringValue = L10n.format(muted ? "volume.labelMuted" : "volume.label", L10n.percent(sliderState.value))
     }
     @objc func volumeChanged() {
         let s = status()

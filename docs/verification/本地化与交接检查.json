@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-08",
+  "version": "0.2.2",
+  "build": "5",
+  "command": "zsh scripts/check.sh",
+  "checks": {
+    "arm64AppBuild": "passed",
+    "adHocSignatureVerification": "passed",
+    "minimumDeploymentVersion": "14.2",
+    "devicePolicyAndGainConvergence": "passed",
+    "sliderSynchronization": "passed",
+    "mediaKeyRouting": "passed",
+    "mediaVolumePolicy": "passed",
+    "translationKeysAndPlaceholders": "passed; 44 UI keys in en and zh-Hans",
+    "packagedResources": "passed; match source tables",
+    "runtimeEnglish": "passed; en / en_US / 50%",
+    "runtimeSimplifiedChinese": "passed; zh-Hans / zh_CN / 50%",
+    "runtimeUnsupportedLanguageFallback": "passed; fr / fr_FR / English UI / 50 NBSP percent",
+    "localizedBundleMetadataAndControllerInitialDetail": "passed in all three runtime cases",
+    "pythonSyntax": "passed",
+    "whitespace": "passed"
+  },
+  "documentation": [
+    "AGENTS.md",
+    "docs/STATUS.md",
+    "docs/DECISIONS.md",
+    "docs/LOCALIZATION.md",
+    "docs/TESTING.md",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/ROADMAP.md",
+    "CHANGELOG.md"
+  ],
+  "runtimeScope": "Offline build, policy and dedicated localization helper only. No audio capture, hardware changes or permission prompts. Previous DisplayVolume 0.2.0 remains running; renamed 0.2.2 application was not launched.",
+  "notVerified": [
+    "Renamed application first launch and permissions from the new project path",
+    "Actual Chinese and English menu/HUD layout and system permission dialogs",
+    "Real sleep and wake; explicitly deferred by user",
+    "Other previously documented hardware and long-running acceptance items"
+  ]
+}

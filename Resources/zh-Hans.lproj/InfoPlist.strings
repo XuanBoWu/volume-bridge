@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "音桥";
+"NSAudioCaptureUsageDescription" = "用于在本机调整外接显示器的音量：读取系统音频，调整增益后立即播放，不保存、不上传。";

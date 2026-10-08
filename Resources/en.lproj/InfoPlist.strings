@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "VolumeBridge";
+"NSAudioCaptureUsageDescription" = "Adjust external display volume locally by processing system audio in memory and immediately playing it back. Audio is never saved or uploaded.";

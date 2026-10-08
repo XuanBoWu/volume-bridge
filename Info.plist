@@ -3,12 +3,14 @@
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>local.alexwu.DisplayVolume</string>
 <key>CFBundleName</key><string>VolumeBridge</string>
-<key>CFBundleDisplayName</key><string>音桥</string>
+<key>CFBundleDisplayName</key><string>VolumeBridge</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
 <key>CFBundleExecutable</key><string>VolumeBridge</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.2.1</string>
-<key>CFBundleVersion</key><string>4</string>
+<key>CFBundleShortVersionString</key><string>0.2.2</string>
+<key>CFBundleVersion</key><string>5</string>
 <key>LSUIElement</key><true/>
 <key>LSMinimumSystemVersion</key><string>14.2</string>
-<key>NSAudioCaptureUsageDescription</key><string>用于在本机调整外接显示器的音量：读取系统音频，调整增益后立即播放，不保存、不上传。</string>
+<key>NSAudioCaptureUsageDescription</key><string>Adjust external display volume locally by processing system audio in memory and immediately playing it back. Audio is never saved or uploaded.</string>
 </dict></plist>
