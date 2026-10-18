@@ -1,6 +1,6 @@
 # Open-source preparation
 
-Prepared on 2026-10-19. The project uses MIT, with English as the default README and a Simplified Chinese translation. No GitHub remote, release, tag, or Actions workflow is created by this preparation.
+Prepared on 2026-10-19. The project uses MIT, with English as the default README and a Simplified Chinese translation. The initial preparation did not create a remote, release, tag, or Actions workflow. On 2026-10-19, the maintainer authorized publishing to [XuanBoWu/volume-bridge](https://github.com/XuanBoWu/volume-bridge) and distributing a locally built v0.2.3 (build 10) test DMG. No Actions workflow is configured.
 
 ## Public-content review
 
@@ -24,4 +24,4 @@ Use `VB_SIGN_IDENTITY=- zsh scripts/check.sh` for offline validation without a s
 
 No GitHub macOS runner is configured, as requested. Builds and checks run locally. The installed build 10 retains its previous local identity; the ad-hoc validation apps are not installed or launched.
 
-Before publishing, choose the GitHub owner/repository name and explicitly authorize creation/push. Enable private vulnerability reporting when configuring repository settings. Public notarized binaries, Developer ID signing, additional hardware/OS testing, and real sleep/wake acceptance remain separate work.
+The authorized publication uses only the reviewed `main` branch and its `v0.2.3` release tag. Private vulnerability reporting is enabled. The DMG is locally self-signed and is not notarized or Developer ID signed; release notes disclose this and the hardware/OS testing limits. Additional hardware/OS testing and real sleep/wake acceptance remain separate work.

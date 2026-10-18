@@ -11,6 +11,14 @@
 
 音桥使用 Core Audio Process Tap 和软件衰减，不依赖 DDC，也不改造控制中心的音量滑块。原生支持音量控制的设备继续交给 macOS。
 
+<img src="docs/images/ui-zh-CN.png" alt="音桥菜单栏面板" width="346">
+
+## 下载
+
+从[最新 Release](https://github.com/XuanBoWu/volume-bridge/releases/latest)下载 Apple 芯片版 DMG，将音桥拖入 Applications，退出正在运行的旧版后再打开，并按提示授权。
+
+当前为本地自签名测试包，没有 Developer ID 或 Apple 公证，macOS 可能阻止打开；也可从源码构建。
+
 ## 使用要求
 
 - Apple 芯片 Mac，默认构建 arm64。
@@ -32,7 +40,7 @@ zsh build.sh
 zsh scripts/setup-local-signing.sh
 ```
 
-本地签名不等于 Developer ID 或公证。当前仓库提供源码和本机测试打包流程，尚未提供经过公证的公开发行版。
+本地签名不等于 Developer ID 或公证。当前提供的预编译 DMG 为测试包，尚未经过公证。
 
 可选的签名初始化脚本需要 OpenSSL 3，普通构建和 ad-hoc 检查不需要。
 

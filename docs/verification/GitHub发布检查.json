@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-19",
+  "version": "0.2.3",
+  "build": "10",
+  "architecture": "arm64",
+  "repository": "https://github.com/XuanBoWu/volume-bridge",
+  "tag": "v0.2.3",
+  "asset": "VolumeBridge-0.2.3-arm64.dmg",
+  "bytes": 694603,
+  "sha256": "f06fd4580e9fdcba16ad6fee44ff8a3c6bbec557b6daabfdfdd3070ed7df2d8f",
+  "signing": "VolumeBridge Local Development; local self-signed, not Developer ID, not notarized",
+  "command": "zsh scripts/build-dmg.sh",
+  "checks": [
+    "PASS: switching, reconnect, format change, bypass, sleep, pause, eligibility, gain convergence",
+    "PASS slider regression: 100% → lower, stale acknowledgements, zero, fractional values, device switch and bypass",
+    "PASS media keys: decode, repeats, mute debounce, native bypass, key pairing and teardown",
+    "PASS media-key lifecycle: rebind on output return/session rebuild, retain native pass-through, reject stale callbacks; no system tap or keys created",
+    "PASS controller reads: UI device list and media-key eligibility never query HAL synchronously",
+    "PASS device selection: fixed-target volume restore, reconnect, same-UID mute, duplex/multi-stream visibility; no real HAL access",
+    "PASS media volume: burst accumulation, limits, fine step, mute preservation and unmute",
+    "PASS logging: JSONL output, size rotation and bounded retention",
+    "PASS volume feedback: square gain, silent states, latest-value coalescing, mute/device cancellation and fallback decoding; no sound played",
+    "PASS app icon: CFBundleIconFile, packaged AppIcon.icns, 10 representations 16-1024 px",
+    "PASS localization tables: 67 UI keys, matching placeholders, source references and packaged en / zh-Hans resources",
+    "PASS runtime localization: en, percent=50%, metadata and controller; no audio started",
+    "PASS runtime localization: zh-Hans, percent=50%, metadata and controller; no audio started",
+    "PASS runtime localization: en, percent=50 %, metadata and controller; no audio started",
+    "PASS Python test-tool syntax",
+    "PASS DMG: image checksum, mounted app signature, bundle contents, Applications link"
+  ],
+  "scope": "Offline build/checks and read-only DMG mount verification only; no install, app restart, output switching, sound playback, or new physical acceptance",
+  "knownUIIssues": [
+    "Sample-rate value in Hz is labeled kHz",
+    "English audio action buttons are truncated"
+  ],
+  "remaining": [
+    "Real sleep/wake",
+    "Long-duration operation and more devices/OS versions",
+    "Final volume-feedback rhythm and slider listening acceptance"
+  ]
+}

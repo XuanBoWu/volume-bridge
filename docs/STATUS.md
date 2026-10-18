@@ -2,6 +2,21 @@
 
 更新日期：2026-10-19。本文是跨会话进度入口；最新提交与未提交改动请以 `git log`、`git status` 为准。Agent 必须先阅读仓库根目录 `AGENTS.md`。
 
+## 2026-10-19 GitHub 发布（0.2.3 / build 10）
+
+- 用户已授权使用本机 gh 创建公开仓库、推送并发布最新 Release。仓库为 https://github.com/XuanBoWu/volume-bridge ，发布版本 `v0.2.3`（源码版本和构建号保持 0.2.3 / 10），资产为 `VolumeBridge-0.2.3-arm64.dmg` 与 `SHA256SUMS.txt`；只推送 main 和该版本标签，不上传本地 checkpoint refs、备份或私钥。
+- `zsh scripts/build-dmg.sh` 通过全部统一检查和 DMG 镜像校验、只读挂载签名、内容比较、Applications 链接检查；生成包为 arm64、694,603 bytes，SHA-256 为 `f06fd4580e9fdcba16ad6fee44ff8a3c6bbec557b6daabfdfdd3070ed7df2d8f`。使用固定本地开发身份签名，未经 Developer ID 签名或公证；Release 与 README 已明确测试包性质。
+- 已启用 GitHub 私密漏洞报告，不配置 Actions。README 加入下载入口和对应语言真实截图，发布验收摘要见 `docs/verification/GitHub发布检查.json`。
+- 本轮只编译、离线检查和打包，没有安装、重启应用、切换输出、播放声音或新增实机验收；现有 `/Applications/VolumeBridge.app` 不变。已知采样率单位、英文按钮截断、真实睡眠/唤醒、长期运行、更多设备/系统和最终提示音听感仍待后续处理。
+- 后续以 GitHub Release 页面和远程标签确认发布结果；正式分发签名/公证另行安排。源码与发布文档已按本次授权纳入提交。
+
+## 2026-10-19 README 界面截图
+
+- 将安装版 0.2.3 / build 10 的英文和简体中文原生面板截图放入 `docs/images/`，分别加入对应 README，按 346 px 宽度展示；两张均为实际应用窗口捕获。
+- 仅添加图片与文档，未改变源码、安装版或音频设置。校验图片与原始捕获逐字节一致、PNG 尺寸、README 引用和 `git diff --check`；不重复运行编译与音频测试。
+- 截图反映当前界面，仍可见采样率数值与 kHz 单位不匹配，以及英文音频操作按钮截断，后续修复界面后应重新截图。
+- 截图改动随用户随后授权的 GitHub 发布提交一并纳入。
+
 ## 2026-10-19 开源准备
 
 - 用户选择 MIT，保留原 Git 作者姓名/邮箱，要求默认英文 README 并在开头提供中文版链接；不接入 GitHub macOS CI。本轮只准备和提交本地仓库，不创建远程、不推送、不打 tag。
@@ -28,15 +43,15 @@
 | 项目 | 当前检查点 |
 | --- | --- |
 | 源码 | 0.2.3，构建号 10；统一检查通过，已安装 |
-| Git | `main`，本机管理，无远程；历史隐私整理后迁移基线 `a0507ab`、功能集成 `3cb2631`；开源准备已整理为独立提交，全部验证通过；当前状态以 git status 为准 |
-| 应用 | `/Applications/VolumeBridge.app` 为 0.2.3 / build 10，诊断测试后正常启动，当前单一运行进程；`build/VolumeBridge.app` 亦为 build 10，但本轮显式 ad-hoc 检查包未安装/启动 |
-| 本机测试包 | `build/VolumeBridge-0.2.3-arm64.dmg` 为 2026-10-12 产物，尚不含 10-18 媒体键修复和提示音；需要时重新打包；本地自签名，未公证 |
+| Git | `main`，远程 `origin` 为 `XuanBoWu/volume-bridge`；历史隐私整理后迁移基线 `a0507ab`、功能集成 `3cb2631`；开源准备已整理为独立提交，全部验证通过；当前状态以 git status 为准 |
+| 应用 | `/Applications/VolumeBridge.app` 为 0.2.3 / build 10，诊断测试后正常启动，当前单一运行进程；`build/VolumeBridge.app` 亦为 build 10，已重新以本地固定身份构建，未安装/启动 |
+| 本机测试包 | `build/VolumeBridge-0.2.3-arm64.dmg` 已于 2026-10-19 按 build 10 重新构建验证，含媒体键修复与提示音；本地自签名，未公证 |
 | 界面名称 | 简体中文「音桥」，英文「VolumeBridge」 |
 | 应用图标 | 金门大桥侧视图，晴空国际橙；`design/icon/icon.py` 生成 `Resources/AppIcon.icns`，详见 `docs/ICON.md` |
 | Bundle ID / 设置域 | `local.alexwu.DisplayVolume`，保留旧设备音量设置 |
 | 当前运行的版本 | `/Applications/VolumeBridge.app`，0.2.3 / 构建号 10；包含目标音量/设备列表及切回输出后的键盘监听修复；结束诊断后无参数正常启动、active、媒体键 ready，本地签名身份保持不变 |
 | 最低构建目标 | macOS 14.2、默认 arm64；实机兼容性仅验证本机 macOS 27 |
-| 发布状态 | 本地自签名；未接登录启动，未做 Developer ID 签名、公证、远程或公开发布 |
+| 发布状态 | 本地自签名；未接登录启动，未做 Developer ID 签名、公证；GitHub 提供源码和本地自签名测试包 |
 
 2026-10-08 交接时运行的原版应用路径为 `<legacy-workspace>/outputs/DisplayVolume.app`，旧版副本和开发构建副本已于 2026-10-11 移到废纸篓 `~/.Trash/VolumeBridge-legacy-20261011/`，未删除。开发目录中的 `build/VolumeBridge.app` 仍可由统一检查重新生成；生成后若不希望它出现在 Launchpad，应不要直接打开它，并在安装版使用期间保持它未注册。进程状态只是快照，后续应重新查询 `ps -axo pid,command`，不要使用历史 PID。启动新应用前先确认旧版已正常退出，不并行捕获或接管媒体键。
 

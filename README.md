@@ -11,6 +11,14 @@ A native macOS menu bar app for controlling the volume of HDMI / DisplayPort dis
 
 VolumeBridge uses a Core Audio Process Tap and software attenuation. It does not use DDC or modify the Control Center volume slider. Devices with native volume controls are left to macOS.
 
+<img src="docs/images/ui-en.png" alt="VolumeBridge menu bar panel" width="346">
+
+## Download
+
+Get the Apple silicon DMG from the [latest release](https://github.com/XuanBoWu/volume-bridge/releases/latest). Drag VolumeBridge into Applications, quit any older running copy, then open it and grant the requested permissions.
+
+The test build is locally self-signed, without Developer ID or Apple notarization. macOS may block opening it; build from source if you prefer.
+
 ## Requirements
 
 - Apple silicon Mac; default build architecture is arm64.
@@ -32,7 +40,7 @@ Builds use a local signing identity if available, otherwise ad-hoc signing. For 
 zsh scripts/setup-local-signing.sh
 ```
 
-Local signing is not Developer ID signing or notarization. This repository currently provides source and local test packaging, not a notarized public release.
+Local signing is not Developer ID signing or notarization. Prebuilt DMGs are test builds, not notarized releases.
 
 The optional signing setup requires OpenSSL 3. Ordinary builds and ad-hoc checks do not.
 
