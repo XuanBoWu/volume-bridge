@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-19",
+  "version": "0.2.3",
+  "build": "10",
+  "scope": "Local source publication preparation only; no remote/push/tag/workflow or binary release",
+  "license": "MIT, Copyright (c) 2026 alexwu",
+  "publicDocs": [
+    "README.md (English with Chinese link first)",
+    "README.zh-CN.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "Issue/PR templates",
+    "docs/OPEN_SOURCE.md"
+  ],
+  "privacyReview": {
+    "scope": "Current tracked/new public files and main ancestry; application-owned local checkpoint refs/reflogs excluded from publication and left intact",
+    "patterns": [
+      "Private-key headers",
+      "Common GitHub/OpenAI/AWS credential formats",
+      "URLs with credentials",
+      "Personal home paths",
+      "Shared-chat URLs",
+      "Device UUIDs",
+      "Local certificate fingerprints"
+    ],
+    "credentialMatchesFound": 0,
+    "redactions": "Personal paths, device UUIDs and local certificate fingerprints replaced consistently in working files and main history; verification results retained",
+    "authorChoice": "User explicitly requested preservation of existing Git author information",
+    "history": "Three commits rewritten while preserving exact author/committer identities, dates and messages; new commit IDs; original bundles and working files only in ignored local work directory",
+    "limit": "Pattern scanning and source/resource review do not guarantee detection of every possible secret; do not mirror the entire local Git database"
+  },
+  "validation": {
+    "existingLocalIdentity": "zsh scripts/check.sh passed before integration commit",
+    "explicitAdHoc": "VB_SIGN_IDENTITY=- zsh scripts/check.sh passed after build-script change",
+    "freshClone": {
+      "method": "git clone --no-local --single-branch --branch main <local-repo> <fresh-directory>",
+      "before": "No build/work directories or Git object alternates",
+      "command": "PATH=/usr/bin:/bin:/usr/sbin:/sbin VB_SIGN_IDENTITY=- VB_SIGN_KEYCHAIN=/unavailable-validation-keychain zsh scripts/check.sh",
+      "result": "All build/signature, policy, slider, media-key lifecycle, cache isolation, device selection, volume, logging, feedback, icon, 67-key localization/runtime and Python checks passed",
+      "toolchain": "Apple Command Line Tools: Swift 6.4, clang 21; system Python 3.9.6; arm64/macOS 27.0.1",
+      "sourceInputCount": 54,
+      "sourceManifestSha256": "1331588bb8ff0c8ef6bd9acbdea5598673f619d73829854d76baf262fee05769",
+      "finalChanges": "After clone validation, only documentation/verification results updated; source/build/test/resource inputs remain identical"
+    },
+    "otherChecks": [
+      "git diff --check",
+      "Verification JSON syntax",
+      "Local Markdown links in public entry documents",
+      "No .github/workflows",
+      "No agent/co-author commit trailers on main"
+    ]
+  },
+  "resources": "No third-party packages, vendored fonts or bundled system audio found; icon code/assets included; platform resources remain under Apple terms",
+  "signingSetup": "Optional stable local certificate generation requires OpenSSL 3; ordinary build and checks do not",
+  "installedApplication": "Existing locally signed /Applications/VolumeBridge.app build 10 was not replaced, launched, stopped or reauthorized by this task",
+  "sideEffects": {
+    "audioCaptureStarted": false,
+    "soundPlayed": false,
+    "outputOrHardwareVolumeChanged": false,
+    "permissionsRequested": false,
+    "certificateCreated": false,
+    "githubCIConfigured": false
+  },
+  "remaining": [
+    "Choose GitHub owner/name and authorize remote creation/push",
+    "Enable private vulnerability reporting in repository settings",
+    "Developer ID/notarized public binary release if desired",
+    "Additional hardware/OS, real sleep/wake and long-duration testing"
+  ],
+  "localArtifacts": "Ignored work/open-source-prep-20261019/: audit reports, history bundles, original working archive, mapping files, independent clone and check logs"
+}

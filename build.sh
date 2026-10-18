@@ -22,7 +22,10 @@ swiftc -target "$target_triple" -swift-version 5 -O -framework AppKit -framework
     -o "$app_dir/Contents/MacOS/VolumeBridge"
 cp "$project_dir/Info.plist" "$app_dir/Contents/Info.plist"
 ditto "$project_dir/Resources" "$app_dir/Contents/Resources"
-if security find-certificate -c "$sign_identity" "$sign_keychain" >/dev/null 2>&1 \
+if [[ "$sign_identity" == "-" ]]; then
+    codesign --force --sign - "$app_dir"
+    print "Signed ad-hoc (explicit VB_SIGN_IDENTITY=-)"
+elif security find-certificate -c "$sign_identity" "$sign_keychain" >/dev/null 2>&1 \
     && security find-key -l "$sign_identity" -s "$sign_keychain" >/dev/null 2>&1; then
     codesign --force --keychain "$sign_keychain" --sign "$sign_identity" "$app_dir"
     print "Signed with local identity: $sign_identity"

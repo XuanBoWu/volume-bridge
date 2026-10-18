@@ -1,6 +1,6 @@
 # 音桥 / VolumeBridge — Agent 交接入口
 
-本文件是仓库内的持续开发约束与背景入口。新会话应先阅读本文件，不依赖原聊天记录。最近整理日期：2026-10-18；动态进度以 `docs/STATUS.md` 为准，实际代码与工作区以 Git 和现场检查为准。
+本文件是仓库内的持续开发约束与背景入口。新会话应先阅读本文件，不依赖原聊天记录。最近整理日期：2026-10-19；动态进度以 `docs/STATUS.md` 为准，实际代码与工作区以 Git 和现场检查为准。
 
 ## 需求与已有结论
 
@@ -12,7 +12,7 @@
 
 ## 当前检查点
 
-- 长期源码仓库：`<project-root>`，分支 `main`，仅本机 Git；初始迁移提交 `21ccc70`。最新提交请运行 `git log -3 --oneline` 查看。
+- 长期源码仓库：`<project-root>`，分支 `main`，仅本机 Git；隐私整理后的初始迁移提交 `a0507ab`。最新提交请运行 `git log -3 --oneline` 查看。
 - 源码版本 0.2.3（构建号 10）：在 0.2.2（重命名、简体中文/英文资源、跟随系统语言、区域百分比格式）基础上加入应用图标、原生 Popover、本地日志、重连后媒体键超时修复和音量提示音。图标是用户逐轮选定的金门大桥侧视图，晴空国际橙配色，16/32/64 px 有专用简化版本，详见 `docs/ICON.md`。
 - 用户在原型 0.2.0 上已验收：衰减、静音、无回声/爆音/断续；100% 后滑块能调回；真实显示器拔插；真实音量键、两次静音、长按、HUD。
 - 0.2.3 已在新路径启动一次并进入 `active`，本地日志写入和固定自签名验证通过；完整 GUI、物理按键和授权回归仍未完成。离线检查和启动日志不能替代完整实机验收。
@@ -52,7 +52,7 @@
 ## 验证与运行约束
 
 - 标准入口：`zsh scripts/check.sh`。它编译并检查签名，运行策略、滑块、媒体键、控制器读取隔离、设备选择回归、媒体键监听生命周期、提示音、应用图标、本地化与 Python 语法检查；不启动捕获、不播放声音、不修改硬件音量、不切换设备、不弹出权限提示。
-- `scripts/setup-local-signing.sh` 在本机登录钥匙串中创建一次 `VolumeBridge Local Development` 自签名身份；普通构建默认使用该身份，找不到时才回退 ad-hoc。`scripts/build-icon.sh` 只在改图标时手动运行，需要 Google Chrome 和 ImageMagick，不属于统一检查。
+- `scripts/setup-local-signing.sh` 在本机登录钥匙串中创建一次 `VolumeBridge Local Development` 自签名身份；普通构建默认使用该身份，找不到时才回退 ad-hoc；`VB_SIGN_IDENTITY=-` 显式跳过证书查找，供无证书验证使用。可选签名初始化需要 OpenSSL 3。`scripts/build-icon.sh` 只在改图标时手动运行，需要 Google Chrome 和 ImageMagick，不属于统一检查。
 - 本机测试 DMG 用 `zsh scripts/build-dmg.sh`：先跑统一检查，再打包、只读挂载验证并卸载。产物留在被忽略的构建目录，不安装、不启动应用；本地自签名仍未公证，也不等同于 Developer ID。
 - 实机测试必须按 `docs/TESTING.md` 显式选择。退出旧版后再启动新版，不同时运行两个相同 Bundle Identifier 的应用或两条软件音频链路。
 - 测试前读取当前输出、采样率与音量，按测试前现场值恢复；不要从历史 JSON 抄回旧音量。测试结果要分别记录自动策略、应用处理入口、真实 PCM、用户物理操作四个层次。
@@ -60,6 +60,9 @@
 - 本地构建默认使用登录钥匙串中的固定自签名身份，没有 Developer ID / 公证 / 登录启动。固定身份让 designated requirement 跨重编译保持稳定；删除或更换该证书、Bundle ID 或权限配置仍可能需要重新授权。没有本地身份时构建回退 ad-hoc，ad-hoc 的 designated requirement 绑定当前 `cdhash`。正式发布要用稳定的 Developer ID 签名并保持 Bundle ID。退出或崩溃后软件衰减消失，恢复原始播放音量；不要承诺能继续保持低音量。
 
 ## Git 与交接维护
+
+- 开源采用 MIT，作者与现有 Git 作者信息保留；README 默认英文，开头链接到 `README.zh-CN.md`。当前暂不接入 GitHub CI，所有验证在本地完成。
+- 公开前已对 main 分支历史中的机器路径、设备 UID 与本地证书指纹脱敏；原始备份只保留在忽略的 work 中。本机应用管理的 refs/codex 与 reflog 未改动，不属于公开分支；仅发布审查后的 main，不镜像上传整个 .git。详见 docs/OPEN_SOURCE.md。
 
 - 按用户当前授权决定是否提交，用户要求先测或不提交时必须保留工作区。提交前查看差异，验证与改动相称，只提交相关文件。
 - 不加 AI/agent 署名或 `Co-authored-by` 尾注。不擅自创建远程仓库、推送、发布、选许可证或打 tag。

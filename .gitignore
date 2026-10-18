@@ -12,3 +12,13 @@ __pycache__/
 .env
 .env.*
 !.env.example
+*.dmg
+*.p12
+*.pfx
+*.key
+*.pem
+*.cer
+*.mobileprovision
+*.provisionprofile
+*.keychain
+*.keychain-db

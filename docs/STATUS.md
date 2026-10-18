@@ -1,6 +1,17 @@
 # 当前背景与进度
 
-更新日期：2026-10-18。本文是跨会话进度入口；最新提交与未提交改动请以 `git log`、`git status` 为准。Agent 必须先阅读仓库根目录 `AGENTS.md`。
+更新日期：2026-10-19。本文是跨会话进度入口；最新提交与未提交改动请以 `git log`、`git status` 为准。Agent 必须先阅读仓库根目录 `AGENTS.md`。
+
+## 2026-10-19 开源准备
+
+- 用户选择 MIT，保留原 Git 作者姓名/邮箱，要求默认英文 README 并在开头提供中文版链接；不接入 GitHub macOS CI。本轮只准备和提交本地仓库，不创建远程、不推送、不打 tag。
+- 已将此前图标、原生面板、日志、设备选择、提示音与媒体键修复整理为功能提交 `3cb2631`（隐私整理后的 ID）。代码仍为 0.2.3 / build 10；本轮没有修改运行逻辑或安装应用。
+- 已扫描当前待公开文件与 main 历史，未发现所检查的私钥/常见 Token/凭据 URL；发现并脱敏机器路径、设备 UUID 和本地证书指纹，保留统计、版本和用户验收范围。原始历史与工作区备份位于忽略的 `work/open-source-prep-20261019/`，本地应用自动 checkpoint refs 与 reflog 不公开、不修改；不使用镜像推送。历史整理保留作者/提交者身份、日期和提交信息，但改变哈希。
+- 新增 MIT、英文 README 与中文版、CONTRIBUTING、SECURITY、THIRD_PARTY_NOTICES、Issue/PR 模板；旧长 README 的开发资料仍由架构、测试、状态与交接文档保留。安全文档要求未来 GitHub 配置时启用私密漏洞报告，当前没有可用的仓库设置入口。
+- 构建增加 `VB_SIGN_IDENTITY=-` 显式 ad-hoc 模式，跳过维护者钥匙串；可选签名初始化依赖 OpenSSL 3 已写清，普通构建不依赖它。补充忽略证书/私钥、DMG 和描述文件规则。
+- 验证结果：准备前本地固定签名统一检查通过；显式 `VB_SIGN_IDENTITY=- zsh scripts/check.sh` 全部通过；JSON、文档本地链接、空白检查通过，未添加 workflow；全新独立克隆验证通过：无旧 build/work、无共享 Git object alternates，仅系统 PATH、Python 3.9.6 和 Apple Command Line Tools，使用不可用钥匙串路径仍完成全部 ad-hoc 检查；未安装或启动检查产物。只执行离线验证，未变更安装版、音频设备或权限。
+- 验收摘要：`docs/verification/开源准备检查.json`；克隆验证后的收尾仅更新文档和验收结果，编译/测试/资源输入与已验证克隆一致。功能和开源准备分别提交，未添加 agent/AI 或 co-author 尾注。
+- 下一步：用户确定 GitHub 所有者/仓库名并授权后发布 main；Developer ID/公证和预编译公开包另行安排。更多系统/设备、真实睡眠和长期稳定性待验收。详见 `docs/OPEN_SOURCE.md`。
 
 ## 用户目标与阶段
 
@@ -17,8 +28,8 @@
 | 项目 | 当前检查点 |
 | --- | --- |
 | 源码 | 0.2.3，构建号 10；统一检查通过，已安装 |
-| Git | `main`，本机管理，无远程；迁移基线 `21ccc70`；0.2.3 改动截至本次整理尚未提交，见文末 |
-| 应用 | `/Applications/VolumeBridge.app` 为 0.2.3 / build 10，诊断测试后正常启动，当前单一运行进程；`build/VolumeBridge.app` 亦为 build 10 |
+| Git | `main`，本机管理，无远程；历史隐私整理后迁移基线 `a0507ab`、功能集成 `3cb2631`；开源准备已整理为独立提交，全部验证通过；当前状态以 git status 为准 |
+| 应用 | `/Applications/VolumeBridge.app` 为 0.2.3 / build 10，诊断测试后正常启动，当前单一运行进程；`build/VolumeBridge.app` 亦为 build 10，但本轮显式 ad-hoc 检查包未安装/启动 |
 | 本机测试包 | `build/VolumeBridge-0.2.3-arm64.dmg` 为 2026-10-12 产物，尚不含 10-18 媒体键修复和提示音；需要时重新打包；本地自签名，未公证 |
 | 界面名称 | 简体中文「音桥」，英文「VolumeBridge」 |
 | 应用图标 | 金门大桥侧视图，晴空国际橙；`design/icon/icon.py` 生成 `Resources/AppIcon.icns`，详见 `docs/ICON.md` |

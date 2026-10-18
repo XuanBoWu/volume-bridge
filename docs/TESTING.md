@@ -29,6 +29,8 @@ git diff --check
 
 `zsh build.sh` 编译并运行策略与日志检查，产物 `build/VolumeBridge.app`；结束时会 `touch` App，便于 Finder 刷新图标缓存。图标与本地化检查由统一入口补充；单独运行 `zsh scripts/test-localizations.sh` 前应先构建 AudioController.o、Logging.o 和主应用。默认 arm64/macOS 14.2；`VB_BUILD_DIR` 和 `VB_ARCH` 可改变构建设置，但不代表对应平台已实测。
 
+`VB_SIGN_IDENTITY=- zsh scripts/check.sh` 明确使用 ad-hoc，跳过本地签名证书查找。公开源码的全新克隆检查使用此模式，验证不依赖维护者钥匙串。可选固定本地签名初始化需要 OpenSSL 3，普通构建不需要。GitHub Actions CI 暂不配置。
+
 上述命令不启动系统音频捕获、不请求媒体键权限、不播放声音、不切换设备或硬件音量。LocalizationTests 仅读取控制器初始化快照。
 
 Feedback、DeviceSelection、MediaKeyLifecycle 使用各自唯一的临时日志目录，结束关闭并清理；不得让日志自动写入日常运行文件。历史上模拟播放/设备事件曾污染默认日志，旧记录须按进程和独立诊断文件核实，不能直接当作安装版的播放或按键统计。
