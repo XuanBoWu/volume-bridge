@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-18",
+  "version": "0.2.3",
+  "build": "7",
+  "sourceState": "Uncommitted workspace; icon, logging, UI and reconnect-fix work preserved",
+  "environment": "Apple M1 Pro, macOS 27.0 (26A428), Mi Monitor DisplayPort 48 kHz stereo, no writable native volume",
+  "request": "Play a native-like volume feedback sound that reflects the current level when adjusting volume",
+  "implementation": [
+    "Play the system volume asset through NSSound on the target output device UID",
+    "Scale the cue with (percent/100)^2 once; the process is excluded from the tap, so the cue bypasses the DSP path",
+    "Fall back to a short synthetic WAV generated in memory when the system asset is unavailable",
+    "Run playback and cancellation on a dedicated serial feedback queue, never in IOProc, the media event tap or device enumeration",
+    "Coalesce rapid key adjustments with an approximately 120 ms interval and read the latest volume before playing",
+    "Stay silent for mute, 0%, paused, bypass, waiting, sleeping, error, missing target and UID mismatch",
+    "Play once after slider release is confirmed by the controller; cancel pending cues on mute, device switch, pause and quit"
+  ],
+  "verification": {
+    "offline": "zsh scripts/check.sh passed, including the new Tests/Feedback policy, rate-limit, coalescing, cancellation and fallback-decoding checks; no sound played; git diff --check passed",
+    "build": "Installed bundle reports 0.2.3 / build 7; codesign strict verification passed with the existing local identity",
+    "install": "Replaced /Applications/VolumeBridge.app after a graceful SIGTERM; previous build 6 backed up; one process after launch",
+    "diagnosticRun": "Installed build launched with --log/--status-file/--command-file/--no-key-permission-prompt: active on Mi Monitor at 68.75%; 47 feedback.played entries at 25-93.75% and zero feedback.playFailed or feedback.soundUnavailable; a command-file volume-down/up exercised the same handler path without injecting system keys",
+    "normalLaunch": "Normal launch at 10:51:43Z reached active at 10:51:44Z; 10 feedback.played entries at 56.25-93.75% during observed physical key activity; zero feedback failures and zero tapDisabledByTimeout in the observed segment",
+    "physicalActivity": "71 media key packets (including releases) in the diagnostic segment; 47 cues were played, consistent with coalescing rather than dropped volume changes",
+    "tapNotification": "A tapDisabledByUserInput (4294967295) notice appeared at startup; media key packets continued to arrive, so it did not block the observed test",
+    "audibleConfirmation": "Not yet recorded. The user was operating physical volume keys during the run, but no explicit statement about hearing the cue has been captured"
+  },
+  "sideEffects": {
+    "applicationReplaced": true,
+    "previousAppBackup": "~/.Trash/VolumeBridge-before-feedback-20261018-184539.app",
+    "systemOutputChangedByTools": false,
+    "sampleRateChangedByTools": false,
+    "hardwareVolumeChangedByTools": false,
+    "syntheticSystemKeysInjected": false,
+    "audioRecordedOrUploaded": false,
+    "realSleepInitiated": false,
+    "userVolumeChoices": "Preserved; the final saved 81.25% was set by the user's own physical keys"
+  },
+  "notVerified": [
+    "Audible loudness and timbre at different percentages, compared with native macOS feedback",
+    "Long-press rhythm and overlap behavior by ear",
+    "Silence on mute, pause, bypass and device switch confirmed by ear",
+    "Slider-release cue confirmed by ear",
+    "Other displays, audio devices, Macs and macOS versions",
+    "Long-duration stability of the cue queue",
+    "The existing 2026-10-12 DMG is stale and does not contain this feature"
+  ],
+  "artifacts": {
+    "localDiagnosticDirectory": "work/feedback-20261018/",
+    "diagnosticLog": "work/feedback-20261018/runtime-test.log",
+    "normalLog": "~/Library/Logs/VolumeBridge/volume-bridge.log",
+    "beforeInstallState": "work/feedback-20261018/before-install.txt"
+  },
+  "git": "No commit created"
+}

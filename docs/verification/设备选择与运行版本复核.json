@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-18",
+  "observedAt": "2026-10-18T15:19:36+00:00",
+  "scope": "Fix device selection review findings; distinguish build 9 offline validation from installed build 8 runtime observations",
+  "bundles": {
+    "source": {
+      "version": "0.2.3",
+      "build": "9"
+    },
+    "built": {
+      "version": "0.2.3",
+      "build": "9"
+    },
+    "installed": {
+      "version": "0.2.3",
+      "build": "8"
+    }
+  },
+  "fixes": [
+    "Restore the target UID volume before the waiting-for-default-output branch; unseen UIDs default to 50%",
+    "Enumerate actual output streams for device selection, including duplex and multi-stream devices; report summed output channels without expanding engine eligibility"
+  ],
+  "verification": {
+    "beforeFix": "New controller regression failed on saved target volume; after fixing volume restoration it failed on the output list count",
+    "offline": "zsh scripts/check.sh passed; final device-selection test with an additional native-bypass assertion also passed",
+    "deviceSelection": "Real reconcile/readOutputDevices methods with fake HAL, seeded private state and paused engine; no timer/listeners, no public preference-writing setters",
+    "regressions": [
+      "A at 80% -> fixed B waiting at saved 10% -> B becomes default at 10%",
+      "Unknown target defaults to 50%",
+      "Disconnected fixed target restores saved 10% after return",
+      "Same UID with changed numeric device ID preserves mute and volume",
+      "Follow-system mode restores A to 80%",
+      "Duplex native headset, unsupported duplex display and multi-stream display remain visible with correct channels and eligibility",
+      "Input-only, offline and private aggregate are excluded; current output sorts first"
+    ],
+    "signing": "Built build 9 and installed build 8 pass strict signature verification; stable local designated requirement matches",
+    "runtimeObservationReliability": "Withdrawn: runtime log was shared with offline test processes; see installedBuild8Observation.sampleValidityCorrection"
+  },
+  "installedBuild8Observation": {
+    "processCount": 1,
+    "runtimeStart": {
+      "fields": {
+        "build": "8",
+        "path": "/Applications/VolumeBridge.app",
+        "pid": 20966,
+        "os": "版本27.0.1（版号26A434）",
+        "bundleID": "local.alexwu.DisplayVolume",
+        "version": "0.2.3"
+      },
+      "timestamp": "2026-10-18T14:07:00Z",
+      "level": "info",
+      "event": "runtime.start"
+    },
+    "feedbackPlayed": 113,
+    "feedbackPlayFailed": 0,
+    "feedbackSoundUnavailable": 0,
+    "tapDisabledNotices": [],
+    "latencySamples": 113,
+    "latencyMsMin": 0,
+    "latencyMsMax": 39,
+    "latencyMeaning": "App volume handler invocation to player.play call; not key hardware-to-acoustic latency or proof of heard rhythm",
+    "audibleAcceptance": "Existing STATUS records initial cue origin/loudness acceptance and slow-rhythm feedback; final build 8 rhythm and slider-release cue remain unconfirmed",
+    "sampleValidityCorrection": "2026-10-18 follow-up discovered Feedback and controller tests auto-started the default logger; this shared-file event sample includes mock test records. Counts and latency samples here are NOT reliable installed-build playback or event-tap health evidence. Historical raw counts are retained, but the inference is withdrawn. Tests now use unique temporary log directories."
+  },
+  "historicalEvidence": "音量提示音接入检查.json is preserved as the historical build 7 / 120 ms record; this follow-up records build 8 separately",
+  "sideEffects": {
+    "applicationReplaced": false,
+    "applicationRestarted": false,
+    "realOutputChanged": false,
+    "hardwareVolumeChanged": false,
+    "userPreferencesWritten": false,
+    "testSoundPlayed": false,
+    "audioRecordedOrUploaded": false,
+    "realSleepInitiated": false
+  },
+  "notVerified": [
+    "Build 9 real device selection and hot-plug behavior; build 9 has not been installed",
+    "Final feedback rhythm and slider-release cue by ear",
+    "Real sleep/wake; reserved for user-arranged testing",
+    "Other hardware and OS versions"
+  ],
+  "git": "No staging or commit; user authorized fixes only"
+}

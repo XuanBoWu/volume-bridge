@@ -8,7 +8,7 @@ mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
 swiftc -target "$target_triple" -swift-version 5 -framework Foundation -framework AppKit -framework CoreAudio \
     -import-objc-header "$project_dir/Sources/AudioController.h" \
     "$project_dir/Sources/Localization.swift" "$project_dir/Tests/Localization/main.swift" \
-    "$build_dir/AudioController.o" -lc++ -o "$app_dir/Contents/MacOS/LocalizationTests"
+    "$build_dir/AudioController.o" "$build_dir/Logging.o" -lc++ -o "$app_dir/Contents/MacOS/LocalizationTests"
 cp "$project_dir/Info.plist" "$app_dir/Contents/Info.plist"
 plutil -replace CFBundleExecutable -string LocalizationTests "$app_dir/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string local.alexwu.VolumeBridge.LocalizationTests "$app_dir/Contents/Info.plist"

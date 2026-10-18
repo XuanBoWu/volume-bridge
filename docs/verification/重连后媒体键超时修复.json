@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-18",
+  "version": "0.2.3",
+  "build": "6",
+  "sourceState": "Uncommitted workspace; existing icon, logging and UI work preserved",
+  "environment": "Apple M1 Pro, macOS 27.0 (26A428), Mi Monitor DisplayPort 48 kHz stereo",
+  "reproduction": {
+    "userReport": "Display disconnected for a while, then reconnected; keyboard volume keys fail but the app slider still works",
+    "logs": "Audio returned to active after reconnect; event tap repeatedly reported tapDisabledByTimeout (4294967294)",
+    "sample": "Main-thread UI timer synchronously enumerated all HAL devices; event tap shared the main RunLoop and queried HAL in its eligibility path"
+  },
+  "fix": [
+    "Enumerate output devices on a separate serial queue and publish an immutable cached list",
+    "Read cached media-key eligibility; revalidate current output and UID on the lifecycle queue when applying each command",
+    "Run the event tap on a dedicated VolumeBridge.MediaKeys thread and RunLoop",
+    "Dispatch actions, logging, counts and HUD work asynchronously to the main thread",
+    "Disable and stop the old listener on teardown; discard old asynchronous actions by generation",
+    "Avoid full-device interrogation when resolving a fixed UID and reuse the current device when it matches"
+  ],
+  "verification": {
+    "offline": "zsh scripts/check.sh passed, including the new ControllerReads HAL-interposition regression; git diff --check passed",
+    "cacheOnlyRegression": "1000 reads each of availableOutputDevices and active media-key eligibility trigger zero HAL reads; inactive states remain ineligible",
+    "initialRuntime": "active and ready, nonzero input/output PCM amplitude statistics, zero buffer mismatches and overloads; 52 physical key actions",
+    "intermediateFinding": "After the cache-only fix a normal restart still produced one timeout; the dedicated thread was added before completion",
+    "finalRuntime": "Installed at /Applications/VolumeBridge.app, normal launch, active audio, ready event tap, one process; dedicated event thread observed in sampling",
+    "finalPhysicalKeys": "28 actions recorded in the observed normal-launch segment; user confirmed final dedicated-thread build remains normal",
+    "finalTimeoutsInObservedSegment": 0,
+    "otherTapNotification": "One tapDisabledByUserInput (4294967295) at startup; re-enabled; distinct from the timeout failure",
+    "latencyScope": "System-reported tap latency remained variable; these readings are not presented as a callback-duration improvement or used as the acceptance threshold",
+    "signature": "Same local certificate designated requirement as the existing installation; codesign verification passed"
+  },
+  "sideEffects": {
+    "systemOutputChangedByTools": false,
+    "sampleRateChangedByTools": false,
+    "hardwareVolumeChangedByTools": false,
+    "syntheticSystemKeysInjected": false,
+    "audioRecordedOrUploaded": false,
+    "realSleepInitiated": false,
+    "userVolumeChoices": "Preserved the latest values selected by the user's own physical keys"
+  },
+  "notVerified": [
+    "A fresh long-duration physical disconnect/reconnect after the final fix",
+    "Previously deferred real sleep/wake acceptance",
+    "Other Macs and macOS versions"
+  ],
+  "artifacts": {
+    "originalFailureBackup": "~/.Trash/VolumeBridge-before-reconnect-fix-20261018-181958.app",
+    "preFinalInstallBackup": "~/.Trash/VolumeBridge-before-final-reconnect-fix-20261018-182546.app",
+    "localDiagnosticDirectory": "work/reconnect-20261018/",
+    "dmg": "Existing 2026-10-12 DMG was not rebuilt and does not contain this fix"
+  },
+  "references": [
+    "https://developer.apple.com/documentation/coregraphics/cgeventtype/tapdisabledbytimeout",
+    "https://developer.apple.com/documentation/coregraphics/cggeteventtaplist(_:_:_:)"
+  ],
+  "git": "No commit created"
+}

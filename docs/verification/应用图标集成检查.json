@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-09",
+  "version": "0.2.3",
+  "build": "6",
+  "machine": "Apple M1 Pro, macOS 27.0",
+  "tools": {
+    "googleChrome": "154.0.8037.99 (headless rendering, isolated temp profile, mock keychain)",
+    "imageMagick": "7.1.1-46 (linear-light box downscale)",
+    "iconutil": "system",
+    "python": "3.13.2"
+  },
+  "design": {
+    "source": "design/icon/icon.py",
+    "concept": "Golden Gate Bridge in side elevation, international orange on clear-sky blue; selected by the user over four design rounds",
+    "renditions": {
+      "AppIcon.svg": "128-1024 px master, 8-unit grid",
+      "AppIcon-64.svg": "icon_32x32@2x",
+      "AppIcon-32.svg": "icon_16x16@2x and icon_32x32",
+      "AppIcon-16.svg": "icon_16x16, pixel-placed cable"
+    }
+  },
+  "commands": [
+    "zsh scripts/build-icon.sh",
+    "zsh scripts/check.sh",
+    "git diff --check",
+    "VB_BUILD_DIR=<temp dir with an app lacking AppIcon.icns> zsh scripts/check-icon.sh",
+    "swift scripts/app-icon-snapshot.swift build/VolumeBridge.app build/icon-snapshot-512.png 512",
+    "swift scripts/app-icon-snapshot.swift build/VolumeBridge.app build/icon-snapshot-64.png 64"
+  ],
+  "checks": {
+    "generatorMatchesApprovedDesign": "passed; the four SVGs are byte-identical to the renditions the user approved",
+    "reproducibleIcns": "passed; Resources/AppIcon.icns is byte-identical to the icns produced during design review",
+    "icnsRepresentations": "passed; 10 representations, 16-1024 px, verified by iconutil round trip and sips",
+    "infoPlistIconDeclaration": "passed; CFBundleIconFile = AppIcon",
+    "packagedIconMatchesSource": "passed",
+    "missingIconNegativeTest": "passed; check-icon.sh exits 1 when the packaged icon is missing",
+    "fullOfflineSuite": "passed; build, ad-hoc signature, policy, slider, media keys, media volume, app icon, localization, Python syntax",
+    "whitespace": "passed",
+    "systemIconRendering": "passed; IconServices shows the new icon for build/VolumeBridge.app on macOS 27.0, not placed in the grey fallback squircle; the 64 px request uses the dedicated 64 px rendition with light system resampling"
+  },
+  "documentation": [
+    "docs/ICON.md",
+    "AGENTS.md",
+    "docs/STATUS.md",
+    "docs/DECISIONS.md",
+    "docs/TESTING.md",
+    "docs/ROADMAP.md",
+    "docs/LOCALIZATION.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "runtimeScope": "Icon generation, offline checks and read-only icon snapshots only. The application was not launched; no audio capture, hardware changes or permission prompts. No VolumeBridge or DisplayVolume process was running.",
+  "notVerified": [
+    "Icon in Finder windows, System Settings privacy lists and permission dialogs",
+    "macOS 26+ dark, tinted and clear icon appearances for a flat .icns",
+    "16 px icon on a non-Retina external display",
+    "New-path 0.2.3 first launch, permissions and menu/HUD layout"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-11",
+  "version": "0.2.3",
+  "build": "6",
+  "machine": "Apple M1 Pro, macOS 27.0",
+  "architecture": "arm64",
+  "sourceState": "main at a559ac6 with uncommitted 0.2.3 icon integration and DMG packaging changes",
+  "commands": [
+    "zsh -n scripts/build-dmg.sh",
+    "zsh scripts/build-dmg.sh",
+    "git diff --check"
+  ],
+  "artifact": {
+    "path": "build/VolumeBridge-0.2.3-arm64.dmg",
+    "bytes": 675019,
+    "sha256": "6d6086248c93bbe20e7ecce776405b0c3c3019861db1a3549999b8edaca3ab00",
+    "format": "UDZO compressed read-only HFS+",
+    "contents": [
+      "VolumeBridge.app",
+      "Applications -> /Applications"
+    ]
+  },
+  "checks": {
+    "shellSyntax": "passed",
+    "fullOfflineSuite": "passed; build, local signature, policy, slider, media keys, media volume, logging rotation, output device selection, Popover UI alignment/font/state fixes, dynamic status icon, app icon, localization, Python syntax",
+    "imageChecksum": "passed; hdiutil verify",
+    "mountedAppSignature": "passed; codesign --verify --strict",
+    "mountedContentsMatchBuild": "passed; diff -qr of the complete application bundle",
+    "bundleIdentifier": "passed; local.alexwu.DisplayVolume",
+    "applicationsLink": "passed; /Applications",
+    "verificationVolumeCleanup": "passed; detached and temporary staging removed",
+    "whitespace": "passed"
+  },
+  "runtimeScope": "Offline build and DMG creation plus read-only mounting only. Application not installed or launched by this verification; no audio capture, hardware changes, permission prompts or real sleep. The already-installed application was left untouched.",
+  "signing": "Application signed with the local development identity; DMG has no Developer ID signature or notarization.",
+  "notVerified": [
+    "Finder drag-to-Applications installation and installed-path first launch",
+    "Permissions and menu/HUD layout",
+    "Gatekeeper acceptance and notarization",
+    "Other machines, Intel and other macOS versions",
+    "Previously deferred real sleep/wake and long-running audio acceptance"
+  ]
+}

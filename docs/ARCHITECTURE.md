@@ -8,6 +8,8 @@
 
 Tap 使用 mutedWhenTapped，避免处理期间原始音频与处理后音频重叠。物理输出作为 Aggregate 主时钟，Tap 开启漂移补偿。GUI 0–100% 映射为 `(percent / 100)²`；实际回调以约 4 ms 时间常数平滑，靠近目标后收敛到精确端点。
 
+音量提示音不经过上述 Tap 或 DSP。本进程被 Tap 排除，提示音直接以目标设备 UID 播放系统音量音；响度同样按平方曲线缩放一次，否则会被捕获链路二次衰减。
+
 当前处理范围：HDMI / DisplayPort、无输入流、单输出流、双声道交错 Float32 PCM、无可写原生音量。其他设备旁路或标记不支持。
 
 ## 执行边界
@@ -15,13 +17,18 @@ Tap 使用 mutedWhenTapped，避免处理期间原始音频与处理后音频重
 - `Sources/AudioController.mm`：串行队列负责设备监听、恢复、音量记忆、资源创建销毁；音频回调只处理 PCM 和原子计数。
 - `Sources/Policy.hpp`：设备条件、生命周期决策和增益收敛的纯策略。
 - `Sources/MediaVolume.hpp`：基于队列中的最新音量累计按键调整，不从延迟的 UI 快照计算增量。
-- `Sources/main.swift`：AppKit 主线程管理菜单栏、睡眠通知和退出。
+- `Sources/main.swift`：AppKit 主线程管理状态栏、Popover、睡眠通知和退出；`Sources/ControlPopover.swift` 负责原生控制面板布局与控件回调。
 - `Sources/VolumeSliderState.swift`：保留最新鼠标输入，防止旧快照重置正在拖动的滑块；后到达的键盘输入可接替待确认鼠标输入。
 - `Sources/MediaKeys.swift` / `MediaKeyPolicy.swift`：仅订阅系统媒体事件，过滤音量三键；普通按键不进入处理。匹配按下和释放，去除静音重复切换。
+- 媒体事件 Tap 在独立的 `VolumeBridge.MediaKeys` 线程/RunLoop 收发，控制操作异步提交主线程和音频生命周期队列；状态、计数、HUD 仍由主线程管理。停止时立即禁用监听并停止其 RunLoop，代次校验丢弃旧监听遗留的异步操作，避免关闭/重新授权后补执行旧按键。
 - `Sources/VolumeHUD.swift`：不激活、不拦截鼠标的浮层，显示设备与音量，按键停止约 1.4 秒后隐藏。
+- `Sources/VolumeFeedback.swift` / `VolumeFeedbackPolicy.swift`：在独立串行队列播放音量提示音，按目标 UID 和平方增益播放系统音量音，系统文件缺失时使用内存合成回退；只读快照，不在实时回调、事件 Tap 或设备枚举路径播放。静音、非 active、设备变化和退出时取消。
 - `Sources/Localization.swift` / `Resources/`：原生 Bundle 翻译与区域百分比；后端说明在生命周期队列查找文案，实时回调不读取资源。机器状态和诊断字段保持不变。
+- `Sources/Logging.mm` / `Sources/Logging.swift`：串行队列写入 JSONL 本地日志，负责轮转、总容量限制和定时清理；实时 IOProc 不调用日志接口。
 
-快照通过短时同步访问提供给 UI。媒体键先检查 active 和当前默认输出，再在串行队列内核对状态与 UID，避免切换设备后的旧事件改变新设备。
+快照通过短时同步访问提供给 UI。媒体键回调只读缓存的接管资格并返回路由结果，随后异步提交控制操作；执行时在生命周期队列查询实时默认输出、核对状态与 UID，避免切换设备后的旧事件改变新设备。设备列表由独立串行队列枚举并缓存（约 2 秒刷新，设备通知失效缓存），UI 不查询 HAL，也不等待生命周期队列。禁止把全设备枚举或同步 Core Audio 查询放回主线程/事件 Tap 回调：重连后的慢查询曾导致真实媒体键监听反复超时禁用。
+
+音频恢复为 active 时，媒体键监听还需按设备 UID、设备 ID 和音频 generation 重新绑定；若曾进入 waiting/bypass 等非接管状态，即使回到同一代次也重新创建。稳定会话只刷新权限，不反复创建。不能只因 CFMachPort valid 或 CGEventTap enabled 就复用切换前的监听；这些状态不证明媒体事件仍在送达。替换时先禁用并停止旧监听，旧代次的异步回调作废；原生旁路期间继续透传。
 
 ## 恢复与退出
 
@@ -30,6 +37,10 @@ Tap 使用 mutedWhenTapped，避免处理期间原始音频与处理后音频重
 同一显示器重建时，旧 Tap 先保持静音保护，新链路成功后才释放旧 Tap。失败时保留保护。正常退出先停媒体事件监听和浮层，再释放音频资源，最后退出进程。程序退出或崩溃后软件衰减消失，恢复原始输出音量。
 
 设备 UID 音量设置暂存在 `local.alexwu.DisplayVolume` 的 UserDefaults。产品改名不同时更改此域；正式发布时需确定命名、签名与设置迁移方案。
+
+切换目标 UID 时，先载入该设备保存的音量（无记录时为 50%），再判断是否等待它成为系统默认输出；不能在等待分支提前改写目标而跳过音量恢复。同一 UID 的配置重建保留当前音量与静音。输出选择列表按实际输出流枚举，包括双向和多流设备；列表可见性与软件接管资格独立，显示声道数按输出流格式汇总，接管支持范围不变。
+
+日志默认位于 `~/Library/Logs/VolumeBridge/`，单文件 1 MiB、总量 12 MiB、保留 14 天，每 6 小时清理一次。诊断参数 `--log` 可指定临时路径，但不接管该目录的清理。
 
 ## 验证边界
 

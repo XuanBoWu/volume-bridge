@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-18",
+  "observedAt": "2026-10-18T15:48:28+00:00",
+  "version": "0.2.3",
+  "sourceBuild": "10",
+  "installedBuild": "10",
+  "environment": "Apple M1 Pro / macOS 27.0.1 (26A434), Mi Monitor DP 48 kHz stereo and built-in speakers",
+  "reportedFailure": "After switching audio output away and back, software audio remains active but keyboard volume fails",
+  "baseline": {
+    "installedBuild": "8",
+    "userReport": "Keyboard volume failed after output return",
+    "observation": "Audio active, tap reports enabled, no subsequent key records; diagnostic output cycle restored active eligibility but reused the exact same Tap ID",
+    "tapReuse": {
+      "before": [
+        {
+          "enabled": true,
+          "id": 1734575198,
+          "mask": 16384
+        }
+      ],
+      "after": [
+        {
+          "enabled": true,
+          "id": 1734575198,
+          "mask": 16384
+        }
+      ],
+      "tapIDReused": true,
+      "status": {
+        "callbacks": 14758,
+        "canHandleMediaKeys": true,
+        "channels": 2,
+        "detail": "软件音量正在处理当前显示器输出",
+        "deviceID": 131,
+        "generation": 3,
+        "hudPresentations": 0,
+        "hudVisible": false,
+        "inputRMS": 0.13847048472825843,
+        "mediaKeyPresses": 0,
+        "mediaKeysState": "ready",
+        "mismatches": 0,
+        "muted": false,
+        "name": "Mi Monitor",
+        "outputRMS": 0.12170257447632193,
+        "overloads": 0,
+        "paused": false,
+        "protectedSilence": false,
+        "rate": 48000,
+        "retryAttempt": 0,
+        "state": "active",
+        "targetMatchesSystem": true,
+        "targetMode": "fixed",
+        "targetName": "Mi Monitor",
+        "targetUID": "example-device-uid-01",
+        "uid": "example-device-uid-01",
+        "volume": 93.75
+      }
+    },
+    "limit": "Baseline automated cycle did not itself send physical keys; exact WindowServer-internal cause is unconfirmed"
+  },
+  "fix": [
+    "Recreate the media event tap when active UID/device ID/audio generation changes or active control resumes after an inactive state",
+    "Keep native bypass pass-through; do not recreate during stable active refresh/key handling",
+    "Stop and disable the old listener, reject callbacks queued by obsolete generations",
+    "Record volume-only packets, pass-through/action counts and listener generations for diagnosis",
+    "Isolate DeviceSelection, Feedback and MediaKeyLifecycle test logs from the default runtime file"
+  ],
+  "verification": {
+    "offline": "zsh scripts/check.sh passed, including listener-replacement/stale-callback tests; git diff --check passed",
+    "realOutputCycles": {
+      "count": 6,
+      "modes": [
+        "fixed: 3 cycles",
+        "follow: 3 cycles"
+      ],
+      "path": "Mi Monitor -> built-in speakers -> Mi Monitor",
+      "eachCycle": "Observed waiting/bypass with no keyboard handling eligibility; returned active with a new real CGEventTap ID and exactly one enabled application tap; volume handler down/up 93.75 -> 87.5 -> 93.75 and HUD update; mismatch/overload 0"
+    },
+    "controllerEntryActions": 12,
+    "userPhysicalKeys": {
+      "confirmation": "现在正常",
+      "volumePackets": 96,
+      "handledPresses": 48,
+      "passedPackets": 0,
+      "hudPresentationsIncluding12ControllerActions": 60,
+      "finalUserVolume": 68.75,
+      "muted": false
+    },
+    "pcmObservation": {
+      "inputRMS": 0.1681351323525967,
+      "outputRMS": 0.07947012114686311,
+      "ratio": 0.47265624997520495,
+      "expectedSquareGain": 0.47265625,
+      "limit": "Runtime counters of existing user playback, no recorded PCM or controlled-tone regression"
+    },
+    "tapDisabledNoticeCounts": {
+      "4294967295": 10
+    },
+    "timeoutDisabledCount": 0,
+    "noticeMeaning": "4294967295 notifications occurred around explicit disable/rebind; subsequent physical packets were handled. Distinct from timeout 4294967294.",
+    "feedbackPlayFailed": 0,
+    "logIsolation": {
+      "beforeSha256": "89ad84933815c986ec625e9698cf8f9151af08f8aa30d2426f4bd3e1615fec7a",
+      "afterSha256": "89ad84933815c986ec625e9698cf8f9151af08f8aa30d2426f4bd3e1615fec7a",
+      "unchanged": true
+    },
+    "normalLaunch": "After diagnostic tests, gracefully exited and normally launched installed build 10; runtime.start/audio.active/media.eventTapReady recorded in the managed default log",
+    "signing": "designated => identifier \"local.alexwu.DisplayVolume\" and certificate root = H\"<local-certificate-sha1>\""
+  },
+  "finalState": {
+    "application": "/Applications/VolumeBridge.app",
+    "normalLaunchEvents": [
+      {
+        "fields": {
+          "pid": 66310,
+          "bundleID": "local.alexwu.DisplayVolume",
+          "path": "/Applications/VolumeBridge.app",
+          "version": "0.2.3",
+          "build": "10",
+          "os": "版本27.0.1（版号26A434）"
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "runtime.start"
+      },
+      {
+        "level": "info",
+        "event": "media.permissionRequested",
+        "timestamp": "2026-10-18T15:47:43Z"
+      },
+      {
+        "fields": {
+          "message": ""
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "audio.controllerStarted"
+      },
+      {
+        "fields": {
+          "from": "permission",
+          "to": "stopped",
+          "reason": "stopped"
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.permissionState"
+      },
+      {
+        "fields": {
+          "thread": "VolumeBridge.MediaKeys",
+          "generation": 1
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.eventTapReady"
+      },
+      {
+        "fields": {
+          "from": "stopped",
+          "to": "ready",
+          "reason": "eventTapCreated"
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.permissionState"
+      },
+      {
+        "fields": {
+          "type": 4294967295
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "warning",
+        "event": "media.eventTapDisabled"
+      },
+      {
+        "fields": {
+          "newUID": "example-device-uid-01",
+          "name": "Mi Monitor",
+          "oldUID": ""
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "notice",
+        "event": "audio.outputChanged"
+      },
+      {
+        "fields": {
+          "name": "Mi Monitor",
+          "uid": "example-device-uid-01",
+          "detail": "正在建立音频链路",
+          "generation": 0,
+          "bufferFrames": 512,
+          "deviceID": 131,
+          "channels": 2,
+          "state": "starting",
+          "sampleRate": 48000
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "audio.state"
+      },
+      {
+        "fields": {
+          "name": "Mi Monitor",
+          "uid": "example-device-uid-01",
+          "detail": "软件音量正在处理当前显示器输出",
+          "generation": 1,
+          "bufferFrames": 512,
+          "deviceID": 131,
+          "channels": 2,
+          "state": "active",
+          "sampleRate": 48000
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "audio.state"
+      },
+      {
+        "fields": {
+          "uid": "example-device-uid-01",
+          "audioGeneration": 1,
+          "deviceID": 131
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.audioSessionRebind"
+      },
+      {
+        "fields": {
+          "from": "ready",
+          "reason": "stopped",
+          "to": "stopped"
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.permissionState"
+      },
+      {
+        "fields": {
+          "thread": "VolumeBridge.MediaKeys",
+          "generation": 3
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.eventTapReady"
+      },
+      {
+        "fields": {
+          "from": "stopped",
+          "to": "ready",
+          "reason": "eventTapCreated"
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "info",
+        "event": "media.permissionState"
+      },
+      {
+        "fields": {
+          "type": 4294967295
+        },
+        "timestamp": "2026-10-18T15:47:43Z",
+        "level": "warning",
+        "event": "media.eventTapDisabled"
+      }
+    ],
+    "targetMode": "fixed original monitor target",
+    "softwareVolume": "Automated tests restored 93.75%; user then chose 68.75% with physical keys, preserved on normal restart",
+    "hardwareOutputRatesVolumes": "Compared inventory by UID; unchanged after test and original default output restored"
+  },
+  "sideEffects": {
+    "applicationReplaced": true,
+    "backup": "~/.Trash/VolumeBridge-before-switch-key-fix-20261018-234256.app",
+    "realDefaultOutputSwitched": true,
+    "hardwareVolumeChangedByTools": false,
+    "sampleRateChangedByTools": false,
+    "systemEffectOutputChangedByTools": false,
+    "systemKeysInjected": false,
+    "feedbackCuesPlayed": true,
+    "testWAVPlayed": false,
+    "audioRecordedOrUploaded": false,
+    "realSleepInitiated": false
+  },
+  "historicalLogCorrection": "Shared default log counts in 设备选择与运行版本复核.json contain offline mock records and are withdrawn as installed-playback evidence; raw historical counts retained with correction. Current diagnostic log is isolated.",
+  "artifacts": "Ignored work/device-key-switch-20261018/: baseline/fixed logs and states, CG tap IDs, switch-test.py, six cycle results, inventories, preference snapshots and normal-start.json",
+  "notVerified": [
+    "Long duration physical unplug/replug and real sleep/wake",
+    "Other hardware/OS versions",
+    "Controlled tone/audio quality and latency regression",
+    "Full volume-feedback timbre/long-press/slider-release listening acceptance"
+  ],
+  "git": "Unstaged/uncommitted; user authorized fix/test/install, not commit"
+}

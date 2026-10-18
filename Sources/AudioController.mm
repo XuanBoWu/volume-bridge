@@ -31,6 +31,13 @@ std::vector<AudioObjectID> streams(AudioObjectID id,AudioObjectPropertyScope sco
     if(n && AudioObjectGetPropertyData(id,&a,0,nullptr,&n,v.data())!=noErr) return {};
     return v;
 }
+std::vector<AudioObjectID> devices() {
+    auto a=address(kAudioHardwarePropertyDevices); UInt32 n=0;
+    if(AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,&a,0,nullptr,&n)!=noErr) return {};
+    std::vector<AudioObjectID> v(n/sizeof(AudioObjectID));
+    if(n && AudioObjectGetPropertyData(kAudioObjectSystemObject,&a,0,nullptr,&n,v.data())!=noErr) return {};
+    return v;
+}
 dv::Device device(AudioObjectID id) {
     dv::Device d; d.id=id; if(!id) return d;
     d.uid=text(id,kAudioDevicePropertyDeviceUID); d.name=text(id,kAudioObjectPropertyName);
@@ -54,9 +61,24 @@ dv::Device device(AudioObjectID id) {
     return d;
 }
 AudioObjectID currentOutput() { AudioObjectID id=0; get(kAudioObjectSystemObject,kAudioHardwarePropertyDefaultOutputDevice,id); return id; }
-void require(OSStatus s,const char *op) { if(s!=noErr) { fprintf(stderr,"API %s error=%d\n",op,int(s)); throw s; } }
+dv::Device deviceUID(NSString *uid) {
+    const std::string wanted=uid.UTF8String ?: "";
+    for(auto id:devices()) {
+        if(text(id,kAudioDevicePropertyDeviceUID)==wanted) return device(id);
+    }
+    return {};
+}
+void require(OSStatus s,const char *op) {
+    if(s!=noErr) {
+        [DVLogger logWithLevel:DVLogLevelError event:@"audio.apiError"
+                        message:[NSString stringWithFormat:@"operation=%s status=%d",op,int(s)]];
+        throw s;
+    }
+}
 void cleanupResult(OSStatus s,const char *op) {
-    if(s!=noErr && s!=kAudioHardwareBadObjectError && s!=kAudioHardwareBadDeviceError) fprintf(stderr,"CLEANUP %s error=%d\n",op,int(s));
+    if(s!=noErr && s!=kAudioHardwareBadObjectError && s!=kAudioHardwareBadDeviceError)
+        [DVLogger logWithLevel:DVLogLevelWarning event:@"audio.cleanupError"
+                        message:[NSString stringWithFormat:@"operation=%s status=%d",op,int(s)]];
 }
 struct Engine {
     dv::Device configuration;
@@ -147,12 +169,16 @@ struct Listener {
 - (void)reconcile;
 - (void)scheduleReconcile:(BOOL)force;
 - (void)publish;
+- (NSArray<NSDictionary<NSString *,id> *> *)readOutputDevices;
+- (void)refreshOutputDevicesIfNeeded;
 @end
 
 @implementation DVAudioController {
     dispatch_queue_t _queue;
+    dispatch_queue_t _deviceQueue;
     dispatch_source_t _timer;
     NSDictionary *_snapshot;
+    NSArray<NSDictionary<NSString *,id> *> *_outputDevices;
     NSMutableDictionary *_saved;
     std::unique_ptr<Engine> _engine,_guard;
     std::vector<Listener> _systemListeners,_deviceListeners;
@@ -163,13 +189,19 @@ struct Listener {
     uint64_t _token,_generation,_totalCalls,_totalMismatches,_overloads;
     unsigned _attempts;
     double _retryAt;
+    double _devicesRefreshedAt;
+    BOOL _deviceRefreshPending;
+    AudioObjectID _systemOutputID;
     NSString *_phase,*_detail;
+    NSString *_targetUID;
 }
 - (instancetype)init {
     if((self=[super init])) {
         _queue=dispatch_queue_create("local.displayvolume.lifecycle",DISPATCH_QUEUE_SERIAL);
+        _deviceQueue=dispatch_queue_create("local.displayvolume.device-list",DISPATCH_QUEUE_SERIAL);
         _saved=[[[NSUserDefaults standardUserDefaults] dictionaryForKey:@"deviceVolumes"] mutableCopy] ?: [NSMutableDictionary dictionary];
-        _phase=@"stopped"; _detail=l10n(@"detail.notStarted"); _percent=50; _snapshot=@{}; [self publish];
+        _targetUID=[[NSUserDefaults standardUserDefaults] stringForKey:@"targetOutputUID"] ?: @"";
+        _phase=@"stopped"; _detail=l10n(@"detail.notStarted"); _percent=50; _snapshot=@{}; _outputDevices=@[]; [self publish];
     }
     return self;
 }
@@ -182,9 +214,14 @@ struct Listener {
         auto n=_engine->sampleCount.exchange(0); double ie=_engine->inputEnergy.exchange(0),oe=_engine->outputEnergy.exchange(0);
         if(n) { inRMS=sqrt(ie/n); outRMS=sqrt(oe/n); }
     }
+    BOOL targetMatches=!_targetUID.length || (_desired.id && _desired.id==_systemOutputID);
     NSDictionary *status=@{
         @"state":_phase ?: @"stopped",@"detail":_detail ?: @"",@"name":[NSString stringWithUTF8String:_desired.name.c_str()],
-        @"uid":[NSString stringWithUTF8String:_desired.uid.c_str()],@"deviceID":@(_desired.id),@"rate":@(_desired.rate),
+        @"uid":[NSString stringWithUTF8String:_desired.uid.c_str()],@"deviceID":@(_desired.id),@"rate":@(_desired.rate),@"channels":@(_desired.channels),
+        @"targetUID":_targetUID ?: @"",@"targetMode":_targetUID.length ? @"fixed" : @"follow",
+        @"targetName":[NSString stringWithUTF8String:_desired.name.c_str()],
+        @"targetMatchesSystem":@(targetMatches),
+        @"canHandleMediaKeys":@(_running && !_paused && !_sleeping && _engine && [_phase isEqual:@"active"] && _desired.id==_systemOutputID),
         @"volume":@(_percent),@"muted":@(_muted),@"paused":@(_paused),@"generation":@(_generation),
         @"callbacks":@(calls),@"mismatches":@(mismatches),@"overloads":@(_overloads),@"protectedSilence":@(_guard && _guard->protectedSilence),
         @"inputRMS":@(inRMS),@"outputRMS":@(outRMS),@"retryAttempt":@(_attempts)
@@ -192,7 +229,13 @@ struct Listener {
     @synchronized(self) { _snapshot=status; }
 }
 - (void)phase:(NSString *)phase detail:(NSString *)detail {
-    if(![_phase isEqual:phase] || ![_detail isEqual:detail]) fprintf(stderr,"STATE %s generation=%llu device=%u rate=%.0f %s\n",phase.UTF8String,_generation,_desired.id,_desired.rate,detail.UTF8String);
+    if(![_phase isEqual:phase] || ![_detail isEqual:detail])
+        [DVLogger logWithLevel:DVLogLevelInfo event:@"audio.state" fields:@{
+            @"state": phase ?: @"", @"generation": @(_generation), @"deviceID": @(_desired.id),
+            @"sampleRate": @(_desired.rate), @"bufferFrames": @(_desired.frames),
+            @"channels": @(_desired.channels), @"uid": [NSString stringWithUTF8String:_desired.uid.c_str()],
+            @"name": [NSString stringWithUTF8String:_desired.name.c_str()], @"detail": detail ?: @""
+        }];
     _phase=phase; _detail=detail; [self publish];
 }
 - (void)clearListeners:(std::vector<Listener> &)list {
@@ -204,11 +247,23 @@ struct Listener {
     __weak DVAudioController *weak=self;
     AudioObjectPropertyListenerBlock block=^(UInt32,const AudioObjectPropertyAddress *) {
         DVAudioController *strong=weak; if(!strong || !strong->_running) return;
-        if(sel==kAudioDeviceProcessorOverload) { strong->_overloads++; [strong publish]; return; }
+        if(sel==kAudioDeviceProcessorOverload) {
+            strong->_overloads++;
+            if(strong->_overloads==1 || strong->_overloads%100==0)
+                [DVLogger logWithLevel:DVLogLevelWarning event:@"audio.overload"
+                                fields:@{ @"count": @(strong->_overloads), @"deviceID": @(strong->_desired.id) }];
+            [strong publish]; return;
+        }
+        if(sel==kAudioHardwarePropertyServiceRestarted)
+            [DVLogger logWithLevel:DVLogLevelWarning event:@"audio.serviceRestarted" message:@""];
+        if(sel==kAudioHardwarePropertyDevices || sel==kAudioHardwarePropertyDefaultOutputDevice || sel==kAudioHardwarePropertyServiceRestarted)
+            strong->_devicesRefreshedAt=0;
         [strong scheduleReconcile:sel==kAudioHardwarePropertyServiceRestarted];
     };
     OSStatus s=AudioObjectAddPropertyListenerBlock(id,&a,_queue,block);
-    if(s==noErr) list.push_back({id,a,block}); else fprintf(stderr,"LISTENER selector=%u error=%d\n",sel,int(s));
+    if(s==noErr) list.push_back({id,a,block});
+    else [DVLogger logWithLevel:DVLogLevelWarning event:@"audio.listenerError"
+                         message:[NSString stringWithFormat:@"selector=%u status=%d",sel,int(s)]];
 }
 - (void)watch:(const dv::Device &)d {
     if(_watchedDevice==d.id && _watchedStream==d.stream) return;
@@ -231,18 +286,52 @@ struct Listener {
     if(_engine) { _totalCalls+=_engine->calls.load(); _totalMismatches+=_engine->mismatches.load(); _engine.reset(); }
     _guard.reset();
 }
+- (void)refreshOutputDevicesIfNeeded {
+    // Some disconnected/remote devices take seconds to answer HAL reads.
+    // Keep enumeration off both the UI and the audio lifecycle/command queue.
+    double now=NSProcessInfo.processInfo.systemUptime;
+    if(_deviceRefreshPending || now-_devicesRefreshedAt<2) return;
+    _deviceRefreshPending=YES; _devicesRefreshedAt=now;
+    dispatch_async(_deviceQueue,^{
+        NSArray *outputs=[self readOutputDevices];
+        dispatch_async(self->_queue,^{
+            @synchronized(self) { self->_outputDevices=outputs; }
+            self->_deviceRefreshPending=NO;
+        });
+    });
+}
 - (void)reconcile {
     if(!_running) return;
-    auto next=device(currentOutput());
+    _systemOutputID=currentOutput();
+    auto current=device(_systemOutputID);
+    [self refreshOutputDevicesIfNeeded];
+    auto next=(!_targetUID.length || current.uid==std::string(_targetUID.UTF8String)) ? current : deviceUID(_targetUID);
     if(next.uid!=_desired.uid) {
+        [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.outputChanged"
+                        fields:@{ @"oldUID": [NSString stringWithUTF8String:_desired.uid.c_str()],
+                                  @"newUID": [NSString stringWithUTF8String:next.uid.c_str()],
+                                  @"name": [NSString stringWithUTF8String:next.name.c_str()] }];
         _attempts=0; _retryAt=0;
         NSNumber *saved=_saved[[NSString stringWithUTF8String:next.uid.c_str()]];
         _percent=saved ? std::clamp(saved.floatValue,0.0f,100.0f) : 50; _muted=NO;
     }
     if(!next.sameConfiguration(_desired)) { _attempts=0; _retryAt=0; }
     _desired=next; [self watch:next];
+    // Adopt the target's saved volume before waiting for it to become the
+    // default output. Otherwise _desired already has its UID on the next pass
+    // and the previous device's volume is mistakenly retained.
+    if(_targetUID.length && current.uid!=next.uid) {
+        if(_engine || _guard) [self discardEngine];
+        _force=NO; _attempts=0; _retryAt=0;
+        [self phase:@"waiting" detail:l10n(@"detail.waitingTarget")];
+        return;
+    }
     auto plan=dv::choose(_running,_sleeping,_paused,next,_engine ? &_engine->configuration : nullptr,_force);
-    if(plan==dv::Plan::keep && _engine->mismatches.load()!=0) { plan=dv::Plan::rebuild; _force=YES; }
+    if(plan==dv::Plan::keep && _engine->mismatches.load()!=0) {
+        [DVLogger logWithLevel:DVLogLevelWarning event:@"audio.bufferMismatch"
+                        fields:@{ @"count": @(_engine->mismatches.load()), @"deviceID": @(_desired.id) }];
+        plan=dv::Plan::rebuild; _force=YES;
+    }
     if(plan!=dv::Plan::keep && plan!=dv::Plan::start && plan!=dv::Plan::rebuild) {
         [self discardEngine]; _attempts=0; _retryAt=0; _force=NO;
         switch(plan) {
@@ -272,6 +361,10 @@ struct Listener {
     } catch(OSStatus error) {
         if(_engine) [self discardEngine];
         _attempts++; _retryAt=NSProcessInfo.processInfo.systemUptime+std::min(30.0,std::pow(2.0,std::min(_attempts-1,5u)));
+        [DVLogger logWithLevel:DVLogLevelError event:@"audio.reconcileFailed"
+                        fields:@{ @"status": @(int(error)), @"attempt": @(_attempts),
+                                  @"retrySeconds": @(std::min(30.0,std::pow(2.0,std::min(_attempts-1,5u)))),
+                                  @"protectedSilence": @(_guard != nullptr) }];
         NSString *detail=[NSString stringWithFormat:l10n(_guard ? @"detail.errorProtected" : @"detail.error"),int(error)];
         [self phase:@"error" detail:detail];
     }
@@ -279,6 +372,7 @@ struct Listener {
 - (void)start {
     dispatch_async(_queue,^{
         if(self->_running) return; self->_running=YES;
+        [DVLogger logWithLevel:DVLogLevelInfo event:@"audio.controllerStarted" message:@""];
         for(auto sel:std::initializer_list<AudioObjectPropertySelector>{kAudioHardwarePropertyDefaultOutputDevice,kAudioHardwarePropertyDevices,kAudioHardwarePropertyServiceRestarted})
             [self addListener:kAudioObjectSystemObject selector:sel scope:kAudioObjectPropertyScopeGlobal list:self->_systemListeners];
         self->_timer=dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,0,0,self->_queue);
@@ -290,6 +384,7 @@ struct Listener {
 }
 - (void)stopWithCompletion:(void (^)(void))completion {
     dispatch_async(_queue,^{
+        [DVLogger logWithLevel:DVLogLevelInfo event:@"audio.controllerStopping" message:@""];
         self->_running=NO; self->_token++;
         if(self->_timer) { dispatch_source_cancel(self->_timer); self->_timer=nil; }
         [self clearListeners:self->_systemListeners]; [self clearListeners:self->_deviceListeners]; [self discardEngine];
@@ -303,8 +398,12 @@ struct Listener {
     });
 }
 - (void)setVolumePercent:(float)percent {
+    [self setVolumePercent:percent completion:nil];
+}
+- (void)setVolumePercent:(float)percent completion:(void (^)(NSDictionary<NSString *,id> *))completion {
     dispatch_async(_queue,^{
         if(!std::isfinite(percent)) return;
+        [DVLogger logWithLevel:DVLogLevelDebug event:@"audio.volumeChanged" fields:@{ @"percent": @(percent) }];
         self->_percent=std::clamp(percent,0.0f,100.0f); self->_muted=NO;
         if(self->_engine) self->_engine->target.store(dv::gain(self->_percent,false));
         if(!self->_desired.uid.empty()) {
@@ -312,14 +411,25 @@ struct Listener {
             [NSUserDefaults.standardUserDefaults setObject:self->_saved forKey:@"deviceVolumes"];
         }
         [self publish];
+        if(completion) {
+            NSDictionary *result=[self snapshot];
+            NSArray *modes=@[NSRunLoopCommonModes,NSDefaultRunLoopMode,NSModalPanelRunLoopMode];
+            CFRunLoopPerformBlock(CFRunLoopGetMain(),(__bridge CFArrayRef)modes,^{ completion(result); });
+            CFRunLoopWakeUp(CFRunLoopGetMain());
+        }
     });
 }
 - (void)setMuted:(BOOL)muted {
-    dispatch_async(_queue,^{ self->_muted=muted; if(self->_engine) self->_engine->target.store(dv::gain(self->_percent,muted)); [self publish]; });
+    dispatch_async(_queue,^{
+        [DVLogger logWithLevel:DVLogLevelInfo event:@"audio.muteChanged" fields:@{ @"muted": @(muted) }];
+        self->_muted=muted; if(self->_engine) self->_engine->target.store(dv::gain(self->_percent,muted)); [self publish];
+    });
 }
 - (BOOL)canHandleMediaKeys {
     NSDictionary *s=[self snapshot];
-    return [s[@"state"] isEqual:@"active"] && currentOutput()==[s[@"deviceID"] unsignedIntValue];
+    // Called from the event tap. Never make a synchronous HAL call here.
+    // applyMediaKey revalidates the live default output on the lifecycle queue.
+    return [s[@"canHandleMediaKeys"] boolValue];
 }
 - (void)applyMediaKey:(NSInteger)key fine:(BOOL)fine deviceUID:(NSString *)uid completion:(void (^)(NSDictionary<NSString *,id> * _Nullable))completion {
     dispatch_async(_queue,^{
@@ -342,9 +452,79 @@ struct Listener {
         CFRunLoopWakeUp(CFRunLoopGetMain());
     });
 }
-- (void)setPaused:(BOOL)paused { dispatch_async(_queue,^{ self->_paused=paused; self->_retryAt=0; [self reconcile]; }); }
-- (void)setSleeping:(BOOL)sleeping {
-    dispatch_async(_queue,^{ self->_sleeping=sleeping; self->_retryAt=0; self->_force=YES; [self reconcile]; });
+- (void)setPaused:(BOOL)paused {
+    dispatch_async(_queue,^{
+        [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.pauseChanged" fields:@{ @"paused": @(paused) }];
+        self->_paused=paused; self->_retryAt=0; [self reconcile];
+    });
 }
-- (void)retry { dispatch_async(_queue,^{ self->_force=YES; self->_retryAt=0; [self reconcile]; }); }
+- (void)setSleeping:(BOOL)sleeping {
+    dispatch_async(_queue,^{
+        [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.sleepChanged" fields:@{ @"sleeping": @(sleeping) }];
+        self->_sleeping=sleeping; self->_retryAt=0; self->_force=YES; [self reconcile];
+    });
+}
+- (void)retry {
+    dispatch_async(_queue,^{
+        [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.manualRetry" message:@""];
+        self->_force=YES; self->_retryAt=0; [self reconcile];
+    });
+}
+- (NSArray<NSDictionary<NSString *,id> *> *)availableOutputDevices {
+    @synchronized(self) { return _outputDevices; }
+}
+- (NSArray<NSDictionary<NSString *,id> *> *)readOutputDevices {
+    AudioObjectID current=currentOutput();
+    NSMutableArray *result=[NSMutableArray array];
+    for(auto id:devices()) {
+        auto outputs=streams(id,kAudioDevicePropertyScopeOutput);
+        if(outputs.empty()) continue;
+        auto d=device(id);
+        if(!d.alive || d.name.empty()) continue;
+        if(d.name.rfind("VolumeBridge", 0) == 0) continue;
+        // Output selection also includes duplex and multi-stream devices.
+        // Their display metadata must not depend on capture eligibility.
+        UInt32 channels=0;
+        for(auto stream:outputs) {
+            AudioStreamBasicDescription format{};
+            if(get(stream,kAudioStreamPropertyVirtualFormat,format)==noErr) channels+=format.mChannelsPerFrame;
+        }
+        NSString *uid=[NSString stringWithUTF8String:d.uid.c_str()];
+        [result addObject:@{
+            @"uid":uid ?: @"", @"name":[NSString stringWithUTF8String:d.name.c_str()] ?: @"",
+            @"rate":@(d.rate), @"channels":@(channels), @"native":@(d.native),
+            @"eligible":@(d.eligible()), @"current":@(id==current), @"display":@(d.display)
+        }];
+    }
+    [result sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        BOOL ac=[a[@"current"] boolValue], bc=[b[@"current"] boolValue];
+        if(ac!=bc) return ac ? NSOrderedAscending : NSOrderedDescending;
+        return [a[@"name"] localizedStandardCompare:b[@"name"]];
+    }];
+    return result;
+}
+- (void)setTargetDeviceUID:(NSString *)uid {
+    dispatch_async(_queue,^{
+        self->_targetUID=uid ?: @"";
+        if(self->_targetUID.length) [[NSUserDefaults standardUserDefaults] setObject:self->_targetUID forKey:@"targetOutputUID"];
+        else [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"targetOutputUID"];
+        [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.targetChanged" fields:@{ @"uid":self->_targetUID }];
+        self->_force=YES; self->_retryAt=0; [self reconcile];
+    });
+}
+- (void)setDefaultOutputDeviceUID:(NSString *)uid {
+    dispatch_async(_queue,^{
+        auto d=deviceUID(uid ?: @"");
+        if(!d.id) return;
+        AudioDeviceID id=d.id; auto a=address(kAudioHardwarePropertyDefaultOutputDevice);
+        OSStatus status=AudioObjectSetPropertyData(kAudioObjectSystemObject,&a,0,nullptr,sizeof(id),&id);
+        if(status!=noErr) {
+            [DVLogger logWithLevel:DVLogLevelError event:@"audio.setDefaultOutputFailed"
+                            fields:@{ @"uid":uid ?: @"", @"status":@((int)status) }];
+        } else {
+            [DVLogger logWithLevel:DVLogLevelNotice event:@"audio.defaultOutputChanged"
+                            fields:@{ @"uid":uid ?: @"", @"name":[NSString stringWithUTF8String:d.name.c_str()] }];
+        }
+    });
+}
 @end
